@@ -7,8 +7,14 @@ Created on Wed Aug  3 18:04:32 2022
 """
 
 import unittest
-import srhdata
+import os, sys
+from pathlib import Path
 
+file = Path(__file__).resolve()
+parent, top = file.parent, file.parents[1]
+sys.path.append(str(top))
+
+import srhdata
 
 class TestBasic(unittest.TestCase):
     def test_openFits(self):
