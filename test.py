@@ -7,12 +7,12 @@ Created on Wed Aug  3 18:04:32 2022
 """
 
 import unittest
-from srhData import srhData
+import srhdata
 
 
 class TestBasic(unittest.TestCase):
     def test_openFits(self):
-        file = srhData.open('data/srh_0612_20220502T030329.fit')
+        file = srhdata.open('data/srh_0612_20220502T030329.fit')
         self.assertEqual(file.isOpen, True)
         
 if __name__ == '__main__':
