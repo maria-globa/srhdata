@@ -138,7 +138,7 @@ class SrhUVData(UVData):
         visRcp = srhFits.visRcp[frequency, first_scan:last_scan, 0:lastVisibility].copy()
         visLcp = srhFits.visLcp[frequency, first_scan:last_scan, 0:lastVisibility].copy()
         
-        scanTime = Time(srhFits.dateObs.split('T')[0] + 'T' + str(timedelta(seconds=srhFits.freqTime[frequency,scan])))
+        scanTime = Time(srhFits.dateObs.split('T')[0] + 'T' + str(timedelta(seconds=srhFits.freqTime[frequency,0])))
         coords = COORD.get_sun(scanTime)
         
         for vis in range(lastVisibility):
