@@ -1,0 +1,213 @@
+2022-09-15 03:20:55	INFO	::casa	
+2022-09-15 03:20:55	INFO	::casa	CASA Version MODULAR 6.4.0.16
+2022-09-15 03:20:55	INFO	::casa	Can't import casatelemetry module.
+2022-09-15 03:21:31	INFO	importuvfits::::casa	##########################################
+2022-09-15 03:21:31	INFO	importuvfits::::casa	##### Begin Task: importuvfits       #####
+2022-09-15 03:21:31	INFO	importuvfits::::casa	importuvfits( fitsfile='/home/maria/Work/SRH imaging/srhdata_tests/test.fits', vis='/home/maria/Work/SRH imaging/srhdata_tests/test.ms', antnamescheme='old' )
+2022-09-15 03:21:31	INFO	importuvfits::::casa	
+2022-09-15 03:21:31	INFO	MSFitsInput::MSFitsInput	Converting FITS file '/home/maria/Work/SRH imaging/srhdata_tests/test.fits' to MeasurementSet '/home/maria/Work/SRH imaging/srhdata_tests/test.ms'
+2022-09-15 03:21:31	INFO		FITS card 48: CRVAL3  =                   -1                                                  
+2022-09-15 03:21:31	INFO		Keyword value has wrong data type.
+2022-09-15 03:21:31	INFO		... converted to type double.
+2022-09-15 03:21:31	INFO		FITS card 50: CDELT3  =                   -1                                                  
+2022-09-15 03:21:31	INFO		Keyword value has wrong data type.
+2022-09-15 03:21:31	INFO		... converted to type double.
+2022-09-15 03:21:31	INFO	MSFitsInput::setupMeasurementSet	Using tile shape [2, 1, 65536] for SRH0612 with obstype=0
+2022-09-15 03:21:32	INFO	MSFitsInput::fillMSMainTableColWise	SOURCE not found in UU VV WW DATE BASELINE ANTENNA1 ANTENNA2 SUBARRAY INTTIM
+2022-09-15 03:21:32	INFO	MSFitsInput::fillMSMainTableColWise	FREQSEL not found in UU VV WW DATE BASELINE ANTENNA1 ANTENNA2 SUBARRAY INTTIM
+2022-09-15 03:21:32	INFO	MSFitsInput::fillMSMainTableColWise	Reading and writing 163840 visibility groups
+2022-09-15 03:21:32	INFO	MSFitsInput::readRandomGroupUVFits	extname=AIPS AN  nrows=192 ncols=10 rowsize=58 pcount=0 gcount=1
+2022-09-15 03:21:32	INFO	MSFitsInput::fillExtraTables	Filling SOURCE table (this may take some time).
+2022-09-15 03:21:32	WARN	MSFitsInput::fillExtraTable	No systemic velocity for field 0
+2022-09-15 03:21:32	WARN	MSFitsInput::fillExtraTable	No rest frequency for field 0
+2022-09-15 03:21:32	INFO	importuvfits::::casa	Task importuvfits complete. Start time: 2022-09-15 11:21:31.316634 End time: 2022-09-15 11:21:32.255922
+2022-09-15 03:21:32	INFO	importuvfits::::casa	##### End Task: importuvfits         #####
+2022-09-15 03:21:32	INFO	importuvfits::::casa	##########################################
+2022-09-15 03:33:17	INFO	importuvfits::::casa	##########################################
+2022-09-15 03:33:17	INFO	importuvfits::::casa	##### Begin Task: importuvfits       #####
+2022-09-15 03:33:17	INFO	importuvfits::::casa	importuvfits( fitsfile='/home/maria/Work/SRH imaging/srhdata_tests/test2.fits', vis='/home/maria/Work/SRH imaging/srhdata_tests/test2.ms', antnamescheme='old' )
+2022-09-15 03:33:17	INFO	importuvfits::::casa	
+2022-09-15 03:33:17	INFO	MSFitsInput::MSFitsInput	Converting FITS file '/home/maria/Work/SRH imaging/srhdata_tests/test2.fits' to MeasurementSet '/home/maria/Work/SRH imaging/srhdata_tests/test2.ms'
+2022-09-15 03:33:17	INFO		FITS card 48: CRVAL3  =                   -1                                                  
+2022-09-15 03:33:17	INFO		Keyword value has wrong data type.
+2022-09-15 03:33:17	INFO		... converted to type double.
+2022-09-15 03:33:17	INFO		FITS card 50: CDELT3  =                   -1                                                  
+2022-09-15 03:33:17	INFO		Keyword value has wrong data type.
+2022-09-15 03:33:17	INFO		... converted to type double.
+2022-09-15 03:33:17	INFO	MSFitsInput::setupMeasurementSet	Using tile shape [2, 1, 65536] for SRH0612 with obstype=0
+2022-09-15 03:33:18	INFO	MSFitsInput::fillMSMainTableColWise	SOURCE not found in UU VV WW DATE BASELINE ANTENNA1 ANTENNA2 SUBARRAY INTTIM
+2022-09-15 03:33:18	INFO	MSFitsInput::fillMSMainTableColWise	FREQSEL not found in UU VV WW DATE BASELINE ANTENNA1 ANTENNA2 SUBARRAY INTTIM
+2022-09-15 03:33:18	INFO	MSFitsInput::fillMSMainTableColWise	Reading and writing 163840 visibility groups
+2022-09-15 03:33:18	INFO	MSFitsInput::readRandomGroupUVFits	extname=AIPS AN  nrows=192 ncols=10 rowsize=58 pcount=0 gcount=1
+2022-09-15 03:33:18	INFO	MSFitsInput::fillExtraTables	Filling SOURCE table (this may take some time).
+2022-09-15 03:33:18	WARN	MSFitsInput::fillExtraTable	No systemic velocity for field 0
+2022-09-15 03:33:18	WARN	MSFitsInput::fillExtraTable	No rest frequency for field 0
+2022-09-15 03:33:18	INFO	importuvfits::::casa	Task importuvfits complete. Start time: 2022-09-15 11:33:17.413389 End time: 2022-09-15 11:33:18.186685
+2022-09-15 03:33:18	INFO	importuvfits::::casa	##### End Task: importuvfits         #####
+2022-09-15 03:33:18	INFO	importuvfits::::casa	##########################################
+2022-09-15 03:33:18	INFO	tclean::::casa	##########################################
+2022-09-15 03:33:18	INFO	tclean::::casa	##### Begin Task: tclean             #####
+2022-09-15 03:33:18	INFO	tclean::::casa	tclean( vis='/home/maria/Work/SRH imaging/srhdata_tests/test2.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='0', observation='', intent='', datacolumn='corrected', imagename='images/test2_0', imsize=1024, cell=2.45, phasecenter='', stokes='RRLL', projection='SIN', startmodel='', specmode='mfs', reffreq='', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='standard', facets=1, psfphasecenter='', wprojplanes=1, vptable='', mosweight=True, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='hogbom', scales=[], nterms=2, smallscalebias=0.0, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='natural', robust=0.5, noise='1.0Jy', npixels=0, uvtaper=[''], niter=0, gain=0.1, threshold=0.0, nsigma=0.0, cycleniter=-1, cyclefactor=1.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=True, calcpsf=True, psfcutoff=0.35, parallel=False )
+2022-09-15 03:33:18	INFO	tclean::::casa	Verifying Input Parameters
+2022-09-15 03:33:18	INFO	tclean::::casa	Making directory : images/
+2022-09-15 03:33:18	INFO	SynthesisImagerVi2::selectData 	MS : /home/maria/Work/SRH imaging/srhdata_tests/test2.ms | Selecting on scan : 0 | [Opened in readonly mode]
+2022-09-15 03:33:18	INFO	SynthesisImagerVi2::selectData 	  NRows selected : 0
+2022-09-15 03:33:18	SEVERE	tclean::::casa	Task tclean raised an exception of class RuntimeError with the following message: Error in selectData() : Data selection ended with 0 rows
+2022-09-15 03:33:18	INFO	tclean::::casa	Task tclean complete. Start time: 2022-09-15 11:33:18.230286 End time: 2022-09-15 11:33:18.271237
+2022-09-15 03:33:18	INFO	tclean::::casa	##### End Task: tclean               #####
+2022-09-15 03:33:18	INFO	tclean::::casa	##########################################
+2022-09-15 03:37:43	INFO	importuvfits::::casa	##########################################
+2022-09-15 03:37:43	INFO	importuvfits::::casa	##### Begin Task: importuvfits       #####
+2022-09-15 03:37:43	INFO	importuvfits::::casa	importuvfits( fitsfile='/home/maria/Work/SRH imaging/srhdata_tests/test3.fits', vis='/home/maria/Work/SRH imaging/srhdata_tests/test3.ms', antnamescheme='old' )
+2022-09-15 03:37:43	INFO	importuvfits::::casa	
+2022-09-15 03:37:43	INFO	MSFitsInput::MSFitsInput	Converting FITS file '/home/maria/Work/SRH imaging/srhdata_tests/test3.fits' to MeasurementSet '/home/maria/Work/SRH imaging/srhdata_tests/test3.ms'
+2022-09-15 03:37:43	INFO		FITS card 48: CRVAL3  =                   -1                                                  
+2022-09-15 03:37:43	INFO		Keyword value has wrong data type.
+2022-09-15 03:37:43	INFO		... converted to type double.
+2022-09-15 03:37:43	INFO		FITS card 50: CDELT3  =                   -1                                                  
+2022-09-15 03:37:43	INFO		Keyword value has wrong data type.
+2022-09-15 03:37:43	INFO		... converted to type double.
+2022-09-15 03:37:43	INFO	MSFitsInput::setupMeasurementSet	Using tile shape [2, 1, 65536] for SRH0612 with obstype=0
+2022-09-15 03:37:44	INFO	MSFitsInput::fillMSMainTableColWise	SOURCE not found in UU VV WW DATE BASELINE ANTENNA1 ANTENNA2 SUBARRAY INTTIM
+2022-09-15 03:37:44	INFO	MSFitsInput::fillMSMainTableColWise	FREQSEL not found in UU VV WW DATE BASELINE ANTENNA1 ANTENNA2 SUBARRAY INTTIM
+2022-09-15 03:37:44	INFO	MSFitsInput::fillMSMainTableColWise	Reading and writing 163840 visibility groups
+2022-09-15 03:37:44	INFO	MSFitsInput::readRandomGroupUVFits	extname=AIPS AN  nrows=192 ncols=10 rowsize=58 pcount=0 gcount=1
+2022-09-15 03:37:44	INFO	MSFitsInput::fillExtraTables	Filling SOURCE table (this may take some time).
+2022-09-15 03:37:44	WARN	MSFitsInput::fillExtraTable	No systemic velocity for field 0
+2022-09-15 03:37:44	WARN	MSFitsInput::fillExtraTable	No rest frequency for field 0
+2022-09-15 03:37:44	INFO	importuvfits::::casa	Task importuvfits complete. Start time: 2022-09-15 11:37:43.420702 End time: 2022-09-15 11:37:44.256931
+2022-09-15 03:37:44	INFO	importuvfits::::casa	##### End Task: importuvfits         #####
+2022-09-15 03:37:44	INFO	importuvfits::::casa	##########################################
+2022-09-15 03:37:44	INFO	tclean::::casa	##########################################
+2022-09-15 03:37:44	INFO	tclean::::casa	##### Begin Task: tclean             #####
+2022-09-15 03:37:44	INFO	tclean::::casa	tclean( vis='/home/maria/Work/SRH imaging/srhdata_tests/test3.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='0', observation='', intent='', datacolumn='corrected', imagename='images/test3_0', imsize=1024, cell=2.45, phasecenter='', stokes='RRLL', projection='SIN', startmodel='', specmode='mfs', reffreq='', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='standard', facets=1, psfphasecenter='', wprojplanes=1, vptable='', mosweight=True, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='hogbom', scales=[], nterms=2, smallscalebias=0.0, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='natural', robust=0.5, noise='1.0Jy', npixels=0, uvtaper=[''], niter=0, gain=0.1, threshold=0.0, nsigma=0.0, cycleniter=-1, cyclefactor=1.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=True, calcpsf=True, psfcutoff=0.35, parallel=False )
+2022-09-15 03:37:44	INFO	tclean::::casa	Verifying Input Parameters
+2022-09-15 03:37:44	INFO	SynthesisImagerVi2::selectData 	MS : /home/maria/Work/SRH imaging/srhdata_tests/test3.ms | Selecting on scan : 0 | [Opened in readonly mode]
+2022-09-15 03:37:44	INFO	SynthesisImagerVi2::selectData 	  NRows selected : 0
+2022-09-15 03:37:44	SEVERE	tclean::::casa	Task tclean raised an exception of class RuntimeError with the following message: Error in selectData() : Data selection ended with 0 rows
+2022-09-15 03:37:44	INFO	tclean::::casa	Task tclean complete. Start time: 2022-09-15 11:37:44.265346 End time: 2022-09-15 11:37:44.280356
+2022-09-15 03:37:44	INFO	tclean::::casa	##### End Task: tclean               #####
+2022-09-15 03:37:44	INFO	tclean::::casa	##########################################
+2022-09-15 03:46:38	INFO	importuvfits::::casa	##########################################
+2022-09-15 03:46:38	INFO	importuvfits::::casa	##### Begin Task: importuvfits       #####
+2022-09-15 03:46:38	INFO	importuvfits::::casa	importuvfits( fitsfile='/home/maria/Work/SRH imaging/srhdata_tests/test4.fits', vis='/home/maria/Work/SRH imaging/srhdata_tests/test4.ms', antnamescheme='old' )
+2022-09-15 03:46:38	INFO	importuvfits::::casa	
+2022-09-15 03:46:38	INFO	MSFitsInput::MSFitsInput	Converting FITS file '/home/maria/Work/SRH imaging/srhdata_tests/test4.fits' to MeasurementSet '/home/maria/Work/SRH imaging/srhdata_tests/test4.ms'
+2022-09-15 03:46:38	INFO		FITS card 48: CRVAL3  =                   -1                                                  
+2022-09-15 03:46:38	INFO		Keyword value has wrong data type.
+2022-09-15 03:46:38	INFO		... converted to type double.
+2022-09-15 03:46:38	INFO		FITS card 50: CDELT3  =                   -1                                                  
+2022-09-15 03:46:38	INFO		Keyword value has wrong data type.
+2022-09-15 03:46:38	INFO		... converted to type double.
+2022-09-15 03:46:38	INFO	MSFitsInput::setupMeasurementSet	Using tile shape [2, 1, 65536] for SRH0612 with obstype=0
+2022-09-15 03:46:38	INFO	MSFitsInput::fillMSMainTableColWise	SOURCE not found in UU VV WW DATE BASELINE ANTENNA1 ANTENNA2 SUBARRAY INTTIM
+2022-09-15 03:46:38	INFO	MSFitsInput::fillMSMainTableColWise	FREQSEL not found in UU VV WW DATE BASELINE ANTENNA1 ANTENNA2 SUBARRAY INTTIM
+2022-09-15 03:46:38	INFO	MSFitsInput::fillMSMainTableColWise	Reading and writing 163840 visibility groups
+2022-09-15 03:46:39	INFO	MSFitsInput::readRandomGroupUVFits	extname=AIPS AN  nrows=192 ncols=10 rowsize=58 pcount=0 gcount=1
+2022-09-15 03:46:39	INFO	MSFitsInput::fillExtraTables	Filling SOURCE table (this may take some time).
+2022-09-15 03:46:39	WARN	MSFitsInput::fillExtraTable	No systemic velocity for field 0
+2022-09-15 03:46:39	WARN	MSFitsInput::fillExtraTable	No rest frequency for field 0
+2022-09-15 03:46:39	INFO	importuvfits::::casa	Task importuvfits complete. Start time: 2022-09-15 11:46:37.971803 End time: 2022-09-15 11:46:38.723660
+2022-09-15 03:46:39	INFO	importuvfits::::casa	##### End Task: importuvfits         #####
+2022-09-15 03:46:39	INFO	importuvfits::::casa	##########################################
+2022-09-15 03:46:39	INFO	tclean::::casa	##########################################
+2022-09-15 03:46:39	INFO	tclean::::casa	##### Begin Task: tclean             #####
+2022-09-15 03:46:39	INFO	tclean::::casa	tclean( vis='/home/maria/Work/SRH imaging/srhdata_tests/test4.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='0', observation='', intent='', datacolumn='corrected', imagename='images/test4_0', imsize=1024, cell=2.45, phasecenter='', stokes='RRLL', projection='SIN', startmodel='', specmode='mfs', reffreq='', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='standard', facets=1, psfphasecenter='', wprojplanes=1, vptable='', mosweight=True, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='hogbom', scales=[], nterms=2, smallscalebias=0.0, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='natural', robust=0.5, noise='1.0Jy', npixels=0, uvtaper=[''], niter=0, gain=0.1, threshold=0.0, nsigma=0.0, cycleniter=-1, cyclefactor=1.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=True, calcpsf=True, psfcutoff=0.35, parallel=False )
+2022-09-15 03:46:39	INFO	tclean::::casa	Verifying Input Parameters
+2022-09-15 03:46:39	INFO	SynthesisImagerVi2::selectData 	MS : /home/maria/Work/SRH imaging/srhdata_tests/test4.ms | Selecting on scan : 0 | [Opened in readonly mode]
+2022-09-15 03:46:39	INFO	SynthesisImagerVi2::selectData 	  NRows selected : 0
+2022-09-15 03:46:39	SEVERE	tclean::::casa	Task tclean raised an exception of class RuntimeError with the following message: Error in selectData() : Data selection ended with 0 rows
+2022-09-15 03:46:39	INFO	tclean::::casa	Task tclean complete. Start time: 2022-09-15 11:46:38.732274 End time: 2022-09-15 11:46:38.748496
+2022-09-15 03:46:39	INFO	tclean::::casa	##### End Task: tclean               #####
+2022-09-15 03:46:39	INFO	tclean::::casa	##########################################
+2022-09-15 06:32:43	INFO	concat::::casa	##########################################
+2022-09-15 06:32:43	INFO	concat::::casa	##### Begin Task: concat             #####
+2022-09-15 06:32:43	INFO	concat::::casa	concat( vis=['/home/maria/Work/SRH imaging/6-12/fits/20220502/0.ms', '/home/maria/Work/SRH imaging/6-12/fits/20220502/1.ms'], concatvis='/home/maria/Work/SRH imaging/6-12/fits/20220502/concat_test.ms', freqtol='', dirtol='', respectname=False, timesort=False, copypointing=True, visweightscale=[], forcesingleephemfield='' )
+2022-09-15 06:32:43	INFO	concat::::casa	copying /home/maria/Work/SRH imaging/6-12/fits/20220502/0.ms to /home/maria/Work/SRH imaging/6-12/fits/20220502/concat_test.ms
+2022-09-15 06:32:43	INFO	concat::::casa	creating scratch columns in /home/maria/Work/SRH imaging/6-12/fits/20220502/concat_test.ms
+2022-09-15 06:32:43	INFO	calibrater::open	****Using NEW VI2-driven calibrater tool****
+2022-09-15 06:32:43	INFO	calibrater::open	Opening MS: /home/maria/Work/SRH imaging/6-12/fits/20220502/concat_test.ms for calibration.
+2022-09-15 06:32:43	INFO	Calibrater::	Initializing nominal selection to the whole MS.
+2022-09-15 06:32:43	INFO	concat::::casa	concatenating /home/maria/Work/SRH imaging/6-12/fits/20220502/1.ms into /home/maria/Work/SRH imaging/6-12/fits/20220502/concat_test.ms
+2022-09-15 06:32:43	INFO	concat::::casa	creating scratch columns for /home/maria/Work/SRH imaging/6-12/fits/20220502/1.ms (original MS unchanged)
+2022-09-15 06:32:43	INFO	calibrater::open	****Using NEW VI2-driven calibrater tool****
+2022-09-15 06:32:43	INFO	calibrater::open	Opening MS: /home/maria/Work/SRH imaging/6-12/fits/20220502/1.ms_with_scrcols for calibration.
+2022-09-15 06:32:43	INFO	Calibrater::	Initializing nominal selection to the whole MS.
+2022-09-15 06:32:43	INFO	MSConcat::concatenate 	Appending /home/maria/Work/SRH imaging/6-12/fits/20220502/1.ms_with_scrcols to /home/maria/Work/SRH imaging/6-12/fits/20220502/concat_test.ms
+2022-09-15 06:32:43	INFO	MSConcat::concatenate 	No valid state tables present. Result won't have one either.
+2022-09-15 06:32:43	INFO	MSConcat::concatenate 	Added 0 rows and matched 1 from the data description subtable
+2022-09-15 06:32:43	INFO	MSConcat::concatenate 	Added 0 rows and matched 1 from the spectral window subtable
+2022-09-15 06:32:43	INFO	MSConcat::concatenate 	Added 0 rows and matched 192 from the antenna subtable
+2022-09-15 06:32:43	INFO	MSConcat::concatenate +	Added 0 rows to the feed subtable
+2022-09-15 06:32:43	INFO	MSConcat::concatenate +	Added 0 rows and matched 1 from the field subtable
+2022-09-15 06:32:43	INFO	MSConcat::copyObservation	Added 0 rows and matched 1 rows in the observation subtable.
+2022-09-15 06:32:43	INFO	MSConcat::copyProcessor	Added 0 rows and matched 0 rows in the processor subtable.
+2022-09-15 06:32:43	INFO	MSConcat::copyPointing	No valid pointing tables present. Result won't have one either.
+2022-09-15 06:32:43	INFO	MSConcat::copySysCal	No valid syscal tables present. Result won't have one either.
+2022-09-15 06:32:43	INFO	MSConcat::copyWeather	No valid weather tables present. Result won't have one either.
+2022-09-15 06:32:43	INFO	MSConcat::copyGainCurve	No valid gain curve tables present. Result won't have one either.
+2022-09-15 06:32:43	WARN	MSConcat::concatenate (file casacore/ms/MSOper/MSConcat.cc, line 996)	Zero or negative scan numbers in MS. May lead to duplicate scan numbers in concatenated MS.
+2022-09-15 06:32:57	INFO	concat::::casa	Task concat complete. Start time: 2022-09-15 14:32:42.803378 End time: 2022-09-15 14:32:56.797538
+2022-09-15 06:32:57	INFO	concat::::casa	##### End Task: concat               #####
+2022-09-15 06:32:57	INFO	concat::::casa	##########################################
+2022-09-15 09:17:14	INFO	importuvfits::::casa	##########################################
+2022-09-15 09:17:14	INFO	importuvfits::::casa	##### Begin Task: importuvfits       #####
+2022-09-15 09:17:14	INFO	importuvfits::::casa	importuvfits( fitsfile='/home/maria/Work/SRH imaging/srhdata_tests/test6.fits', vis='/home/maria/Work/SRH imaging/srhdata_tests/test6.ms', antnamescheme='old' )
+2022-09-15 09:17:14	INFO	importuvfits::::casa	
+2022-09-15 09:17:14	INFO	MSFitsInput::MSFitsInput	Converting FITS file '/home/maria/Work/SRH imaging/srhdata_tests/test6.fits' to MeasurementSet '/home/maria/Work/SRH imaging/srhdata_tests/test6.ms'
+2022-09-15 09:17:14	INFO		FITS card 48: CRVAL3  =                   -1                                                  
+2022-09-15 09:17:14	INFO		Keyword value has wrong data type.
+2022-09-15 09:17:14	INFO		... converted to type double.
+2022-09-15 09:17:14	INFO		FITS card 50: CDELT3  =                   -1                                                  
+2022-09-15 09:17:14	INFO		Keyword value has wrong data type.
+2022-09-15 09:17:14	INFO		... converted to type double.
+2022-09-15 09:17:14	INFO	MSFitsInput::setupMeasurementSet	Using tile shape [2, 1, 65536] for SRH with obstype=0
+2022-09-15 09:17:14	INFO	MSFitsInput::fillMSMainTableColWise	SOURCE not found in UU VV WW DATE BASELINE ANTENNA1 ANTENNA2 SUBARRAY INTTIM
+2022-09-15 09:17:14	INFO	MSFitsInput::fillMSMainTableColWise	FREQSEL not found in UU VV WW DATE BASELINE ANTENNA1 ANTENNA2 SUBARRAY INTTIM
+2022-09-15 09:17:14	INFO	MSFitsInput::fillMSMainTableColWise	Reading and writing 8192 visibility groups
+2022-09-15 09:17:14	INFO	MSFitsInput::readRandomGroupUVFits	extname=AIPS AN  nrows=192 ncols=10 rowsize=58 pcount=0 gcount=1
+2022-09-15 09:17:14	INFO	MSFitsInput::fillExtraTables	Filling SOURCE table (this may take some time).
+2022-09-15 09:17:14	WARN	MSFitsInput::fillExtraTable	No systemic velocity for field 0
+2022-09-15 09:17:14	WARN	MSFitsInput::fillExtraTable	No rest frequency for field 0
+2022-09-15 09:17:14	INFO	importuvfits::::casa	Task importuvfits complete. Start time: 2022-09-15 17:17:13.570126 End time: 2022-09-15 17:17:13.806238
+2022-09-15 09:17:14	INFO	importuvfits::::casa	##### End Task: importuvfits         #####
+2022-09-15 09:17:14	INFO	importuvfits::::casa	##########################################
+2022-09-15 09:17:14	INFO	tclean::::casa	##########################################
+2022-09-15 09:17:14	INFO	tclean::::casa	##### Begin Task: tclean             #####
+2022-09-15 09:17:14	INFO	tclean::::casa	tclean( vis='/home/maria/Work/SRH imaging/srhdata_tests/test6.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='', observation='', intent='', datacolumn='corrected', imagename='images/test6_0', imsize=1024, cell=2.45, phasecenter='', stokes='RRLL', projection='SIN', startmodel='', specmode='mfs', reffreq='', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='standard', facets=1, psfphasecenter='', wprojplanes=1, vptable='', mosweight=True, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='hogbom', scales=[], nterms=2, smallscalebias=0.0, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='natural', robust=0.5, noise='1.0Jy', npixels=0, uvtaper=[''], niter=0, gain=0.1, threshold=0.0, nsigma=0.0, cycleniter=-1, cyclefactor=1.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=True, calcpsf=True, psfcutoff=0.35, parallel=False )
+2022-09-15 09:17:14	INFO	tclean::::casa	Verifying Input Parameters
+2022-09-15 09:17:14	INFO	SynthesisImagerVi2::selectData 	MS : /home/maria/Work/SRH imaging/srhdata_tests/test6.ms | [Opened in readonly mode]
+2022-09-15 09:17:14	INFO	SynthesisImagerVi2::selectData 	  NRows selected : 8192
+2022-09-15 09:17:14	INFO	MeasIERS::fillMeas(MeasIERS::Files, Double) 	Requested JD 59701.1 is outside the range of the IERS (Earth axis data) table.
+2022-09-15 09:17:14	INFO	MeasIERS::fillMeas(MeasIERS::Files, Double) +	Calculations will proceed with less precision
+2022-09-15 09:17:14	SEVERE	MeasTable::dUTC(Double) (file casacore/measures/Measures/MeasTable.cc, line 4290)	Leap second table TAI_UTC seems out-of-date.
+2022-09-15 09:17:14	SEVERE	MeasTable::dUTC(Double) (file casacore/measures/Measures/MeasTable.cc, line 4290)+	Until the table is updated (see the CASA documentation or your system admin),
+2022-09-15 09:17:14	SEVERE	MeasTable::dUTC(Double) (file casacore/measures/Measures/MeasTable.cc, line 4290)+	times and coordinates derived from UTC could be wrong by 1s or more.
+2022-09-15 09:17:14	INFO	SynthesisImagerVi2::defineImage 	Define image coordinates for [images/test6_0] : 
+2022-09-15 09:17:14	WARN	SynthesisParamsImage::buildCoordinateSystem (file src/code/synthesis/ImagerObjects/SynthesisUtilMethods.cc, line 2459)	Did not get the position of SRH from data repository
+2022-09-15 09:17:14	WARN	SynthesisParamsImage::buildCoordinateSystem (file src/code/synthesis/ImagerObjects/SynthesisUtilMethods.cc, line 2459)	Please contact CASA to add it to the repository.
+2022-09-15 09:17:14	WARN	SynthesisParamsImage::buildCoordinateSystem (file src/code/synthesis/ImagerObjects/SynthesisUtilMethods.cc, line 2459)	Using first antenna position as refence 
+2022-09-15 09:17:14	INFO	SynthesisImagerVi2::defineImage 	Impars : start 
+2022-09-15 09:17:14	INFO	SynthesisImagerVi2::defineImage 	Shape : [1024, 1024, 2, 1]Spectral : [5.80015e+09] at [0] with increment [1.00003e+07]
+2022-09-15 09:17:14	INFO	SynthesisImagerVi2::defineImage 	Set Gridding options for [images/test6_0] with ftmachine : gridft
+2022-09-15 09:17:14	INFO	SynthesisImagerVi2::nSubCubeFitInMemory	Required memory: 0.1048 GB. Available mem.: 3.729 GB (rc, mem. fraction: 80%, memory: -) => Subcubes: 1. Processes on node: 1.
+2022-09-15 09:17:14	INFO	SynthesisImagerVi2::weight() 	Set imaging weights : Natural weighting
+2022-09-15 09:17:14	INFO	task_tclean::SynthesisDeconvolver::setupDeconvolution 	Set Deconvolution Options for [images/test6_0] : hogbom
+2022-09-15 09:17:14	INFO	SynthesisImager::makePSF 	----------------------------------------------------------- Make PSF ---------------------------------------------
+2022-09-15 09:17:15	INFO	SIImageStore::calcSensitivity 	[images/test6_0] Theoretical sensitivity (Jy/bm):p0:0.00477949 p1:0.00477949 
+2022-09-15 09:17:15	INFO	SIImageStore::getPSFGaussian 	Time to fit Gaussian to PSF 0.029243
+2022-09-15 09:17:15	INFO	SIImageStore::printBeamSet 	Restoring Beams 
+2022-09-15 09:17:15	INFO	SIImageStore::printBeamSet +	Chan      Freq   Vel Pol
+2022-09-15 09:17:15	INFO	SIImageStore::printBeamSet +	   0 5.800e+09     0  RR   29.1791 arcsec x   20.9835 arcsec pa=-27.6432 deg
+2022-09-15 09:17:15	INFO	SIImageStore::printBeamSet +	   0 5.800e+09     0  LL   29.1791 arcsec x   20.9835 arcsec pa=-27.6432 deg
+2022-09-15 09:17:15	INFO	task_tclean::PBMath::initByDiameter 	PBMath init to Airy scaled to diameter = 2
+2022-09-15 09:17:15	INFO	task_tclean::SynthesisImagerVi2::makePrimaryBeam 	vi2 : Evaluating Primary Beam model onto image grid(s)
+2022-09-15 09:17:15	INFO	task_tclean::SynthesisImager::executeMajorCycle 	----------------------------------------------------------- Run (Last) Major Cycle 1 -------------------------------------
+2022-09-15 09:17:15	INFO	task_tclean::SDAlgorithmBase::restore 	[images/test6_0] : Restoring model image.
+2022-09-15 09:17:15	WARN	task_tclean::SIImageStore::restore (file src/code/synthesis/ImagerObjects/SIImageStore.cc, line 2246)	Restoring with an empty model image. Only residuals will be processed to form the output restored image.
+2022-09-15 09:17:15	INFO	task_tclean::SIImageStore::restore 	Beam for chan : 0 : 29.1791 arcsec, 20.9835 arcsec, -27.6432 deg
+2022-09-15 09:17:16	INFO	task_tclean::SIImageStore::restore 	Beam for chan : 0 : 29.1791 arcsec, 20.9835 arcsec, -27.6432 deg
+2022-09-15 09:17:16	INFO	tclean::::casa	Searching for images with prefix 'images/test6_0'... Found these, writing history into them: ['images/test6_0.residual', 'images/test6_0.psf', 'images/test6_0.model', 'images/test6_0.sumwt', 'images/test6_0.image', 'images/test6_0.pb']
+2022-09-15 09:17:16	INFO	tclean::::casa	Task tclean complete. Start time: 2022-09-15 17:17:13.814660 End time: 2022-09-15 17:17:15.711427
+2022-09-15 09:17:16	INFO	tclean::::casa	##### End Task: tclean               #####
+2022-09-15 09:17:16	INFO	tclean::::casa	##########################################
