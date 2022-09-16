@@ -33,39 +33,59 @@ class SrhUVData(UVData):
             ])
         super().__init__()
         
-    def write_uvfits_0306(self, srcName, dstName, lastVisibility=3007, frequency=0, scan=0, calibrating=True, uvSize=1024, averaging=0):
-        srhFits = SrhFitsFile(srcName, uvSize)
-        srhFits.setFrequencyChannel(frequency)
-        srhFits.getHourAngle(scan)
-        if (calibrating):
-            srhFits.calibrate(frequency)
-        srhFits.vis2uv(scan, average=averaging)
-        visRcp = srhFits.visRcp[frequency,scan,0:lastVisibility].copy()
-        visLcp = srhFits.visLcp[frequency,scan,0:lastVisibility].copy()
-        scanTime = Time(srhFits.dateObs.split('T')[0] + 'T' + str(timedelta(seconds=srhFits.freqTime[frequency,scan])))
+    def write_uvfits_0306(self, srhFits, dstName, frequency=0, scan=0, average=0):
+        lastVisibility=3007
+        antZeroRow = srhFits.antZeroRow[:32]
+        vis_list = NP.append(NP.arange(0, lastVisibility), antZeroRow).astype(int)
         
+        
+        if scan < 0 or scan > srhFits.dataLength:
+            raise Exception('scan is out of range')
+        if scan + average > srhFits.dataLength:
+            raise Exception('averaging range is larger than data range')
+        if average > 1:
+            visRcp = NP.mean(srhFits.visRcp[frequency, scan:scan+average, vis_list], 0)
+            visLcp = NP.mean(srhFits.visLcp[frequency, scan:scan+average, vis_list], 0)
+        else:
+            visRcp = srhFits.visRcp[frequency, scan, vis_list].copy()
+            visLcp = srhFits.visLcp[frequency, scan, vis_list].copy()
+
+        scanTime = Time(srhFits.dateObs.split('T')[0] + 'T' + str(timedelta(seconds=srhFits.freqTime[frequency,scan])))
         coords = COORD.get_sun(scanTime)
         
         for vis in range(lastVisibility):
             i = vis // 97
             j = vis % 97 
-            visLcp[vis] *= NP.exp(1j*(-(srhFits.ewAntPhaLcp[frequency, j]+srhFits.ewLcpPhaseCorrection[frequency, j]) + (srhFits.nAntPhaLcp[frequency, i] + srhFits.nLcpPhaseCorrection[frequency, i])))
-            visRcp[vis] *= NP.exp(1j*(-(srhFits.ewAntPhaRcp[frequency, j]+srhFits.ewRcpPhaseCorrection[frequency, j]) + (srhFits.nAntPhaRcp[frequency, i] + srhFits.nRcpPhaseCorrection[frequency, i])))
-            visLcp[vis] /= (srhFits.ewAntAmpLcp[frequency, j] * srhFits.nAntAmpLcp[frequency, i])
-            visRcp[vis] /= (srhFits.ewAntAmpRcp[frequency, j] * srhFits.nAntAmpRcp[frequency, i])
+            visLcp[vis] *= NP.exp(1j*(-(srhFits.ewAntPhaLcp[frequency, j]+srhFits.ewLcpPhaseCorrection[frequency, j]) + (srhFits.nsAntPhaLcp[frequency, i] + srhFits.nsLcpPhaseCorrection[frequency, i])))
+            visRcp[vis] *= NP.exp(1j*(-(srhFits.ewAntPhaRcp[frequency, j]+srhFits.ewRcpPhaseCorrection[frequency, j]) + (srhFits.nsAntPhaRcp[frequency, i] + srhFits.nsRcpPhaseCorrection[frequency, i])))
+            visLcp[vis] /= (srhFits.ewAntAmpLcp[frequency, j] * srhFits.nsAntAmpLcp[frequency, i])
+            visRcp[vis] /= (srhFits.ewAntAmpRcp[frequency, j] * srhFits.nsAntAmpRcp[frequency, i])
         
-        self.ant_1_array = srhFits.antennaA[0:lastVisibility]
-        self.ant_2_array = srhFits.antennaB[0:lastVisibility]
+        for vis_zr in range(len(antZeroRow)):
+            vis = lastVisibility + vis_zr
+            if vis < 32:
+                visLcp[vis] *= NP.exp(1j*(-(srhFits.ewAntPhaLcp[frequency, vis_zr]+srhFits.ewLcpPhaseCorrection[frequency, vis_zr]) + (srhFits.ewAntPhaLcp[frequency, 32] + srhFits.ewLcpPhaseCorrection[frequency, 32])))
+                visRcp[vis] *= NP.exp(1j*(-(srhFits.ewAntPhaRcp[frequency, vis_zr]+srhFits.ewRcpPhaseCorrection[frequency, vis_zr]) + (srhFits.ewAntPhaRcp[frequency, 32] + srhFits.ewRcpPhaseCorrection[frequency, 32])))
+                visLcp[vis] /= (srhFits.ewAntAmpLcp[frequency, vis_zr] * srhFits.ewAntAmpLcp[frequency, 32])
+                visRcp[vis] /= (srhFits.ewAntAmpRcp[frequency, vis_zr] * srhFits.ewAntAmpRcp[frequency, 32])
+            else:
+                visLcp[vis] *= NP.exp(1j*(-(srhFits.ewAntPhaLcp[frequency, vis_zr+1]+srhFits.ewLcpPhaseCorrection[frequency, vis_zr+1]) + (srhFits.ewAntPhaLcp[frequency, 32] + srhFits.ewLcpPhaseCorrection[frequency, 32])))
+                visRcp[vis] *= NP.exp(1j*(-(srhFits.ewAntPhaRcp[frequency, vis_zr+1]+srhFits.ewRcpPhaseCorrection[frequency, vis_zr+1]) + (srhFits.ewAntPhaRcp[frequency, 32] + srhFits.ewRcpPhaseCorrection[frequency, 32])))
+                visLcp[vis] /= (srhFits.ewAntAmpLcp[frequency, vis_zr+1] * srhFits.ewAntAmpLcp[frequency, 32])
+                visRcp[vis] /= (srhFits.ewAntAmpRcp[frequency, vis_zr+1] * srhFits.ewAntAmpRcp[frequency, 32])
+        
+        self.ant_1_array = srhFits.antennaA[vis_list]
+        self.ant_2_array = srhFits.antennaB[vis_list]
         self.antenna_names = srhFits.antennaNames
         self.antenna_numbers = NP.array(list(map(int,srhFits.antennaNumbers)))
-        self.Nants_data = NP.union1d(srhFits.antennaA[0:lastVisibility],srhFits.antennaB[0:lastVisibility]).size
+        self.Nants_data = NP.union1d(srhFits.antennaA[vis_list],srhFits.antennaB[vis_list]).size
         self.Nants_telescope = srhFits.antennaNames.shape[0]
         self.Nfreqs = 1
         self.Npols = 2
         self.Ntimes = 1
         self.Nspws = 1
-        self.Nbls = lastVisibility
-        self.Nblts = lastVisibility * self.Ntimes
+        self.Nbls = len(vis_list)
+        self.Nblts = self.Nbls * self.Ntimes
         self.phase_type = 'phased'
         self.phase_center_ra = coords.ra.rad
         self.phase_center_dec = coords.dec.rad
@@ -97,14 +117,17 @@ class SrhUVData(UVData):
         flags_ew_lcp = NP.where(srhFits.ewAntAmpLcp[frequency] == 1e6)[0]
         flags_ew_rcp = NP.where(srhFits.ewAntAmpRcp[frequency] == 1e6)[0]
         flags_ew = NP.unique(NP.append(flags_ew_lcp, flags_ew_rcp))
-        flags_n_lcp = NP.where(srhFits.nAntAmpLcp[frequency] == 1e6)[0]
-        flags_n_rcp = NP.where(srhFits.nAntAmpRcp[frequency] == 1e6)[0]
-        flags_n = NP.unique(NP.append(flags_n_lcp, flags_n_rcp))
+        flags_ns_lcp = NP.where(srhFits.nsAntAmpLcp[frequency] == 1e6)[0]
+        flags_ns_rcp = NP.where(srhFits.nsAntAmpRcp[frequency] == 1e6)[0]
+        flags_ns = NP.unique(NP.append(flags_ns_lcp, flags_ns_rcp))
         
         flags_arr = NP.zeros((31,97), dtype = 'bool')
-        flags_arr[flags_n,:] = True
+        flags_arr[flags_ns,:] = True
         flags_arr[:,flags_ew] = True
         flags_arr = NP.reshape(flags_arr, (31*97))
+        flags_zr = NP.zeros(len(antZeroRow), dtype = 'bool')
+        flags_zr[flags_ew[flags_ew < 32]] = True
+        flags_arr = NP.append(flags_arr, flags_zr)
         
         self.flag_array[:,0,0,0] = flags_arr
         self.flag_array[:,0,0,1] = flags_arr
@@ -116,16 +139,17 @@ class SrhUVData(UVData):
             self.antenna_positions[ant] =  [-(ant - 96) * 9.8, 0, 0]
         self.baseline_array = 2048 * (self.ant_2_array + 1) + self.ant_1_array + 1 + 2**16
 #        self.uvw_array = self.antenna_positions[self.ant_1_array] - self.antenna_positions[self.ant_2_array]
-        self.uvw_array = NP.zeros((lastVisibility,3))
+        self.uvw_array = NP.zeros((len(vis_list),3))
 
         lst = Time(scanTime,scale='utc', location=self.srhEarthLocation).sidereal_time('mean')
         hourAngle = lst.to('rad').value - self.phase_center_ra
-        for vis in range(lastVisibility):
+        for vis in range(len(vis_list)):
             self.uvw_array[vis] = base2uvw0306(hourAngle,coords.dec.rad,self.ant_2_array[vis], self.ant_1_array[vis])
         
         super().write_uvfits(dstName,write_lst=False,spoof_nonessential=True,run_check=False)
 
-    def write_uvfits_0612(self, srhFits, dstName, lastVisibility=8192, frequency=0, scan=0, average=0):
+    def write_uvfits_0612(self, srhFits, dstName, frequency=0, scan=0, average=0):
+        lastVisibility=8192
         if scan < 0 or scan > srhFits.dataLength:
             raise Exception('scan is out of range')
         if scan + average > srhFits.dataLength:
