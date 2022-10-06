@@ -11,6 +11,7 @@ from astropy.io import fits
 from .ZirinTb import ZirinTb
 import json
 from .srh_coordinates import RAOcoords
+from casatasks import importuvfits
 
 
 class SrhFitsFile():
@@ -258,6 +259,9 @@ class SrhFitsFile():
                 self.calculatePhaseLcp_nonlinear(freqChannel)
             if rcp:
                 self.calculatePhaseRcp_nonlinear(freqChannel)
+                
+    def MSfromUvFits(self, uvfits_name, ms_name):
+        importuvfits(uvfits_name, ms_name)
 
     def solarPhase(self, freq):
         pass
@@ -317,4 +321,13 @@ class SrhFitsFile():
         pass
         
     def modelDiskConv_unity(self):
+        pass
+    
+    def saveAsUvFits(self):
+        pass
+    
+    def MSfromUvFits(self):
+        pass
+    
+    def clean(self):
         pass

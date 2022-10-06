@@ -7,12 +7,14 @@ Created on Wed Aug 17 18:14:20 2022
 """
 from .srh_fits import SrhFitsFile
 from .srh_coordinates import base2uvw0612
+from .srh_uvfits import SrhUVData
 from astropy import constants
 import numpy as NP
 from scipy.optimize import least_squares
 import scipy.signal
 from . import srh_utils
 from skimage.transform import warp, AffineTransform
+
 
 class SrhFitsFile0612(SrhFitsFile):
     def __init__(self, name):
@@ -382,4 +384,11 @@ class SrhFitsFile0612(SrhFitsFile):
         qSun_lm = NP.roll(NP.roll(qSun_lm,self.sizeOfUv//2,0),self.sizeOfUv//2,1)# / self.sizeOfUv;
         qSun_lm = NP.flip(qSun_lm, 0)
         self.modelDisk = qSun_lm
+        
+    def saveAsUvFits(self, filename):
+        uv_fits = SrhUVData()
+        uv_fits.write_uvfits_0612(self, filename)
+    
+    def clean(self):
+        pass
         

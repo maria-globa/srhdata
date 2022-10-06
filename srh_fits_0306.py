@@ -8,6 +8,7 @@ Created on Wed Aug 17 11:40:04 2022
 
 from .srh_fits import SrhFitsFile
 from .srh_coordinates import base2uvw0306
+from .srh_uvfits import SrhUVData
 from astropy import constants
 import numpy as NP
 from scipy.optimize import least_squares
@@ -440,3 +441,10 @@ class SrhFitsFile0306(SrhFitsFile):
         qSun_lm = NP.roll(NP.roll(qSun_lm,self.sizeOfUv//2-1,0),self.sizeOfUv//2-1,1)# / self.sizeOfUv;
         qSun_lm = NP.flip(qSun_lm, 0)
         self.modelDisk = qSun_lm
+        
+    def saveAsUvFits(self, filename):
+        uv_fits = SrhUVData()
+        uv_fits.write_uvfits_0306(self, filename)
+    
+    def clean(self):
+        pass
