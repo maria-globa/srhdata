@@ -261,6 +261,8 @@ class SrhFitsFile():
                 self.calculatePhaseRcp_nonlinear(freqChannel)
                 
     def MSfromUvFits(self, uvfits_name, ms_name):
+        self.uvfits_name = uvfits_name
+        self.ms_name = ms_name
         importuvfits(uvfits_name, ms_name)
 
     def solarPhase(self, freq):
@@ -324,9 +326,6 @@ class SrhFitsFile():
         pass
     
     def saveAsUvFits(self):
-        pass
-    
-    def MSfromUvFits(self):
         pass
     
     def clean(self):
