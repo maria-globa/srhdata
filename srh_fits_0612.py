@@ -14,6 +14,7 @@ from scipy.optimize import least_squares
 import scipy.signal
 from . import srh_utils
 from skimage.transform import warp, AffineTransform
+from casatasks import tclean
 
 
 class SrhFitsFile0612(SrhFitsFile):
@@ -385,10 +386,17 @@ class SrhFitsFile0612(SrhFitsFile):
         qSun_lm = NP.flip(qSun_lm, 0)
         self.modelDisk = qSun_lm
         
-    def saveAsUvFits(self, filename):
+    def saveAsUvFits(self, filename, **kwargs):
         uv_fits = SrhUVData()
-        uv_fits.write_uvfits_0612(self, filename)
+        uv_fits.write_uvfits_0612(self, filename, **kwargs)
     
-    def clean(self):
-        pass
+    def clean(self, imagename = 'images/0', freqchan = 0, scan = 0, average = 0, cell = 2.45, imsize = 1024, niter = 100000, threshold = 40000, stokes = 'RRLL', **kwargs):
+        tclean(vis = self.ms_name,
+               imagename = imagename,
+               cell = cell, 
+               imsize = imsize,
+               niter = niter,
+               threshold = threshold,
+               stokes = stokes,
+               **kwargs)
         
