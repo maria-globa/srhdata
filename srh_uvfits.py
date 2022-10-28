@@ -189,7 +189,7 @@ class SrhUVData(UVData):
         self.phase_center_epoch = 2000.0
         self.channel_width = 1e7
         self.freq_array = NP.zeros((1,1))
-        self.freq_array[0] = 5.8e9
+        self.freq_array[0] = srhFits.freqList[frequency]*1e3
         self.history = 'SRH'
         self.instrument = 'SRH'
         self.integration_time = NP.full(self.Nblts,0.1)
