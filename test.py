@@ -24,14 +24,14 @@ class TestBasic(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
     
-# from srhdata.srh_uvfits import SrhUVData
-# from srhdata.srh_fits_0612 import SrhFitsFile0612
-# from srhdata.srh_fits_0306 import SrhFitsFile0306
-# from casatasks import importuvfits,tclean
-# test_num = 15
+from srhdata.srh_uvfits import SrhUVData
+from srhdata.srh_fits_0612 import SrhFitsFile0612
+from srhdata.srh_fits_0306 import SrhFitsFile0306
+from casatasks import importuvfits,tclean
+test_num = 15
 
-# srh_f = SrhFitsFile0612('/home/mariagloba/Work/Python Scripts/6-12/fits/20220502/srh_0612_20220502T030329.fit')
-# srh_f.makeImage(path = '/home/mariagloba/Work/Python Scripts/srhdata_tests', scan = 2, average = 10)
+srh_f = SrhFitsFile0612('/home/mariagloba/Work/Python Scripts/6-12/fits/20220502/srh_0612_20220502T030329.fit')
+srh_f.makeImage(path = '/home/mariagloba/Work/Python Scripts/srhdata_tests', scan = 2, average = 10)
 # srh_f.loadGains('/home/mariagloba/Work/Python Scripts/6-12/fits/20220502/gains_ns.json')
 # srh_f.vis2uv(0, average=20)
 # srh_f.centerDisk()

@@ -398,7 +398,7 @@ class SrhFitsFile0612(SrhFitsFile):
         self.mask_name = maskname
         os.system('cp -r \"%s.model\" \"%s\"' % (imagename, self.model_name))
         os.system('cp -r \"%s.image\" \"%s\"' % (imagename, self.mask_name))
-        rmtables(tablenames = 'images/%s.*' % imagename)
+        rmtables(tablenames = '%s*' % imagename)
         
         ia.open(self.mask_name)
         self.restoring_beam = ia.restoringbeam()['beams']['*0']['*0']
@@ -493,7 +493,7 @@ class SrhFitsFile0612(SrhFitsFile):
         self.calibrate(frequency)
         self.saveAsUvFits(absname+'.fits', frequency=frequency, scan=scan, average=average)
         self.MSfromUvFits(absname+'.fits', absname+'.ms')
-        self.makeMaskModel(modelname = casa_imagename + '_model', maskname = os.path.join(path, casa_imagename + '_mask'))
+        self.makeMaskModel(modelname = casa_imagename + '_model', maskname = casa_imagename + '_mask', imagename = casa_imagename + '_temp')
         a,b,ang = self.restoring_beam['major']['value'],self.restoring_beam['minor']['value'],self.restoring_beam['positionangle']['value']
         rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
         self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
