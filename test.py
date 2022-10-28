@@ -30,43 +30,9 @@ if __name__ == '__main__':
 # from casatasks import importuvfits,tclean
 # test_num = 16
 
-# srh_f = SrhFitsFile0612('/home/mariagloba/Work/Python Scripts/6-12/fits/20220515/srh_0612_20220515T033902.fit')
-# srh_f.makeImage(path = '/home/mariagloba/Work/Python Scripts/srhdata_tests', cleantables = False, scan = 2, average = 10, frequency = 0, deconvolver = 'multiscale', scales = [1,2,3,4,5,10,15,30])
-# srh_f.loadGains('/home/mariagloba/Work/Python Scripts/6-12/fits/20220502/gains_ns.json')
-# srh_f.vis2uv(0, average=20)
-# srh_f.centerDisk()
-# srh_f.saveAsUvFits('/home/mariagloba/Work/Python Scripts/srhdata_tests/test%d.fits'%test_num, average = 20)
-# srh_f.MSfromUvFits('/home/mariagloba/Work/Python Scripts/srhdata_tests/test%d.fits'%test_num, '/home/mariagloba/Work/Python Scripts/srhdata_tests/test%d.ms'%test_num)
-# # srh_f.clean(imagename = '/home/mariagloba/Work/Python Scripts/srhdata_tests/images/test%d_0'%test_num, deconvolver = 'multiscale', scales = [1,3,5,10,20])
-# srh_f.makeMaskModel(modelname = '/home/mariagloba/Work/Python Scripts/srhdata_tests/model%d'%test_num,
-#                     maskname = '/home/mariagloba/Work/Python Scripts/srhdata_tests/mask%d'%test_num,
-                    # imagename = '/home/mariagloba/Work/Python Scripts/srhdata_tests/image%d'%test_num)
-# srh_uv = SrhUVData()
-# srh_uv.write_uvfits_0612(srh_f, '/home/maria/Work/SRH imaging/srhdata_tests/test%d.fits'%test_num)
+# # srh_f = SrhFitsFile0612('/home/mariagloba/Work/Python Scripts/6-12/fits/20220515/srh_0612_20220515T033902.fit')
+# # srh_f.makeImage(path = '/home/mariagloba/Work/Python Scripts/srhdata_tests', cleantables = False, scan = 2, average = 10, frequency = 0, deconvolver = 'multiscale', scales = [1,2,3,4,5,10,15,30])
 
-# importuvfits(fitsfile = '/home/maria/Work/SRH imaging/srhdata_tests/test%d.fits'%test_num,
-#               vis = '/home/maria/Work/SRH imaging/srhdata_tests/test%d.ms'%test_num)
-# tclean(vis = '/home/maria/Work/SRH imaging/srhdata_tests/test%d.ms'%test_num,
-#         imagename = 'images/test%d_0'%test_num,
-#         cell = 2.45,
-#         imsize = 1024,
-#         niter = 0,
-#         stokes = 'RRLL')
 
 # srh_f = SrhFitsFile0306('/home/mariagloba/Work/fits/20220614/srh_0306_20220614T034539.fit')
-# srh_f.loadGains('/home/mariagloba/Work/fits/20220614/gains_20220614_ns.json')
-# srh_f.saveAsUvFits('/home/mariagloba/Work/Python Scripts/srhdata_tests/test%d.fits'%test_num, average = 20)
-# srh_f.MSfromUvFits('/home/mariagloba/Work/Python Scripts/srhdata_tests/test%d.fits'%test_num, '/home/mariagloba/Work/Python Scripts/srhdata_tests/test%d.ms'%test_num)
-# # srh_f.clean(imagename = '/home/mariagloba/Work/Python Scripts/srhdata_tests/images/test%d_0'%test_num, deconvolver = 'multiscale', scales = [1,3,5,10,20])
-# srh_f.makeMaskModel(modelname = '/home/mariagloba/Work/Python Scripts/srhdata_tests/model%d'%test_num,
-#                     maskname = '/home/mariagloba/Work/Python Scripts/srhdata_tests/mask%d'%test_num,
-#                     imagename = '/home/mariagloba/Work/Python Scripts/srhdata_tests/image%d'%test_num)
-
-# importuvfits(fitsfile = '/home/maria/Work/SRH imaging/srhdata_tests/test%d.fits'%test_num,
-#               vis = '/home/maria/Work/SRH imaging/srhdata_tests/test%d.ms'%test_num)
-# tclean(vis = '/home/maria/Work/SRH imaging/srhdata_tests/test%d.ms'%test_num,
-#         imagename = 'images/test%d_0'%test_num,
-#         cell = 2.45,
-#         imsize = 1024,
-#         niter = 0,
-#         stokes = 'RRLL')
+# srh_f.makeImage(path = '/home/mariagloba/Work/Python Scripts/srhdata_tests', cleantables = False, scan = 2, average = 10, frequency = 3)#, deconvolver = 'multiscale', scales = [1,2,3,4,5,10,15,30])

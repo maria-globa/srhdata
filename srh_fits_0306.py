@@ -342,7 +342,7 @@ class SrhFitsFile0306(SrhFitsFile):
 #        qSun_lm_conv = NP.fft.fft2(NP.roll(NP.roll(qSun_lm_uv,self.sizeOfUv//2+1,0),self.sizeOfUv//2+1,1));
 #        qSun_lm_conv = NP.roll(NP.roll(qSun_lm_conv,self.sizeOfUv//2-1,0),self.sizeOfUv//2-1,1);
 #        qSun_lm_conv = NP.flip(NP.flip(qSun_lm_conv, 1), 0)
-        self.lm_hd_relation = NP.sum(qSun_lm)/NP.sum(qSmoothSun)
+        self.lm_hd_relation[self.frequencyChannel] = NP.sum(qSun_lm)/NP.sum(qSmoothSun)
         self.fftDisk = qSun_lm_fft #qSun_lm_conv, 
     
     def createUvUniform(self):
@@ -452,9 +452,15 @@ class SrhFitsFile0306(SrhFitsFile):
                stokes = stokes,
                **kwargs)
         
-    def makeMaskModel(self, modelname = 'images/model', maskname = 'images/mask', imagename = 'images/temp', cell = 2.45, imsize = 1024, threshold=100000, stokes = 'RRLL', **kwargs):
-        tclean(vis = self.ms_name,
-               imagename = imagename,
+    def makeMask(self, maskname = 'images/mask', cell = 2.45, imsize = 1024, threshold=200000, stokes = 'RRLL', **kwargs):
+        freq_current = self.frequencyChannel
+        self.setFrequencyChannel(0)
+        self.calibrate(freq = 0)
+        self.saveAsUvFits(maskname + '.fits')
+        self.MSfromUvFits(maskname + '.fits', maskname + '_temp.ms')
+        os.system('rm \"' + maskname + '.fits\"')
+        tclean(vis = maskname + '_temp.ms',
+               imagename = maskname + '_temp',
                cell = cell, 
                imsize = imsize,
                niter = 10000,
@@ -463,15 +469,9 @@ class SrhFitsFile0306(SrhFitsFile):
                **kwargs)
         
         ia = IA()
-        self.model_name = modelname
         self.mask_name = maskname
-        os.system('cp -r \"%s.model\" \"%s\"' % (imagename, self.model_name))
-        os.system('cp -r \"%s.model\" \"%s\"' % (imagename, self.mask_name))
-        rmtables(tablenames = 'images/%s.*' % imagename)
-        
-        ia.open(imagename + '.image')
-        self.restoring_beam = ia.restoringbeam()#['beams']['*0']['*0']
-        ia.close()
+        os.system('cp -r \"%s_temp.model\" \"%s\"' % (maskname, maskname))
+        rmtables(tablenames = '%s_temp.*' % maskname)
         
         ia.open(self.mask_name)
         ia_data = ia.getchunk()
@@ -495,6 +495,27 @@ class SrhFitsFile0306(SrhFitsFile):
         ia_data_new[:,:,1,0] = smooth_mask_cut1
         ia.putchunk(pixels=ia_data_new)
         ia.unlock()
+        ia.close()
+        
+        self.setFrequencyChannel(freq_current)
+
+    def makeModel(self, modelname = 'images/model', imagename = 'images/temp', cell = 2.45, imsize = 1024, threshold=100000, stokes = 'RRLL', **kwargs):
+        tclean(vis = self.ms_name,
+               imagename = imagename,
+               cell = cell, 
+               imsize = imsize,
+               niter = 0,
+               threshold=threshold,
+               stokes = stokes,
+               **kwargs)
+        
+        ia = IA()
+        self.model_name = modelname
+        os.system('cp -r \"%s.model\" \"%s\"' % (imagename, self.model_name))
+        rmtables(tablenames = 'images/%s.*' % imagename)
+        
+        ia.open(imagename + '.image')
+        self.restoring_beam = ia.restoringbeam()['beams']['*0']['*0']
         ia.close()
         
         ia.open(self.model_name)
@@ -566,15 +587,17 @@ class SrhFitsFile0306(SrhFitsFile):
         hduList = fits.HDUList(saveFitsVhdu)
         hduList.writeto(saveFitsVpath, overwrite=True)
         
-    def makeImage(self, path = './', frequency = 0, scan = 0, average = 0, cell = 2.45, imsize = 1024, niter = 100000, threshold = 40000, stokes = 'RRLL', **kwargs):
+    def makeImage(self, path = './', cleantables = True, frequency = 0, scan = 0, average = 0, cell = 2.45, imsize = 1024, niter = 100000, threshold = 40000, stokes = 'RRLL', **kwargs):
         fitsTime = srh_utils.ihhmm_format(self.freqTime[frequency, scan])
         imagename = 'srh_%sT%s_%04d'%(self.hduList[0].header['DATE-OBS'], fitsTime, self.freqList[frequency]*1e-3 + .5)
+        maskname = 'srh_%sT%s_mask'%(self.hduList[0].header['DATE-OBS'], fitsTime)
         absname = os.path.join(path, imagename)
         casa_imagename = os.path.join(path, imagename)
+        self.makeMask(maskname = os.path.join(path,maskname))
         self.calibrate(frequency)
         self.saveAsUvFits(absname+'.fits', frequency=frequency, scan=scan, average=average)
         self.MSfromUvFits(absname+'.fits', absname+'.ms')
-        self.makeMaskModel(modelname = casa_imagename + '_model', maskname = casa_imagename + '_mask', imagename = casa_imagename + '_temp')
+        self.makeModel(modelname = casa_imagename + '_model', imagename = casa_imagename + '_temp')
         a,b,ang = self.restoring_beam['major']['value'],self.restoring_beam['minor']['value'],self.restoring_beam['positionangle']['value']
         rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
         self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
