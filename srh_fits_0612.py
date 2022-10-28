@@ -471,7 +471,7 @@ class SrhFitsFile0612(SrhFitsFile):
         iImage = rcp + lcp
         vImage = rcp - lcp
         saveFitsIhdu = fits.PrimaryHDU(header=pHeader, data=iImage.astype('float32'))
-        saveFitsIpath = fits_imagename + '_I.fits'
+        saveFitsIpath = fits_imagename + '_I.fit'
         ewLcpPhaseColumn = fits.Column(name='ewLcpPhase', format='D', array = self.ewAntPhaLcp[self.frequencyChannel,:] + self.ewLcpPhaseCorrection[self.frequencyChannel,:])
         ewRcpPhaseColumn = fits.Column(name='ewRcpPhase', format='D', array = self.ewAntPhaRcp[self.frequencyChannel,:] + self.ewRcpPhaseCorrection[self.frequencyChannel,:])
         nsLcpPhaseColumn = fits.Column(name='nsLcpPhase',   format='D', array = self.nsAntPhaLcp[self.frequencyChannel,:] + self.nsLcpPhaseCorrection[self.frequencyChannel,:])
@@ -481,7 +481,7 @@ class SrhFitsFile0612(SrhFitsFile):
         hduList.writeto(saveFitsIpath, overwrite=True)
         
         saveFitsVhdu = fits.PrimaryHDU(header=pHeader, data=vImage.astype('float32'))
-        saveFitsVpath = fits_imagename + '_V.fits'
+        saveFitsVpath = fits_imagename + '_V.fit'
         hduList = fits.HDUList(saveFitsVhdu)
         hduList.writeto(saveFitsVpath, overwrite=True)
         
