@@ -15,7 +15,10 @@ from scipy.optimize import least_squares
 import scipy.signal
 from . import srh_utils
 from skimage.transform import warp, AffineTransform
-from casatasks import tclean
+from casatasks import tclean, rmtables
+from casatools import image as IA
+import os
+from .ZirinTb import ZirinTb
 
 class SrhFitsFile0306(SrhFitsFile):
     def __init__(self, name):
@@ -309,36 +312,27 @@ class SrhFitsFile0306(SrhFitsFile):
         self.lcp = warp(self.lcp,(shift + (rotate + back_shift)).inverse)[O-Q:O+Q,O-Q:O+Q]
         self.rcp = warp(self.rcp,(shift + (rotate + back_shift)).inverse)[O-Q:O+Q,O-Q:O+Q]
 
-    def createDisk(self, radius, arcsecPerPixel = 2.45552):
-        qSun = NP.zeros((self.sizeOfUv, self.sizeOfUv))
-        sunRadius = radius / (arcsecPerPixel)
-        for i in range(self.sizeOfUv):
-            x = i - self.sizeOfUv//2 - 1
-            for j in range(self.sizeOfUv):
-                y = j - self.sizeOfUv//2 - 1
-                if (NP.sqrt(x*x + y*y) < sunRadius):
-                    qSun[i , j] = 1
-                    
-        dL = 2*( 30//2) + 1
-        arg_x = NP.linspace(-1.,1,dL)
-        arg_y = NP.linspace(-1.,1,dL)
-        xx, yy = NP.meshgrid(arg_x, arg_y)
-        
+    def createDiskLmFft(self, radius, arcsecPerPixel = 2.45552):
         scaling = self.RAO.getPQScale(self.sizeOfUv, NP.deg2rad(arcsecPerPixel*(self.sizeOfUv-1)/3600.), self.freqList[self.frequencyChannel]*1e3)
         scale = AffineTransform(scale=(scaling[0]/self.sizeOfUv, scaling[1]/self.sizeOfUv))
         back_shift = AffineTransform(translation=(self.sizeOfUv/2, self.sizeOfUv/2))
         shift = AffineTransform(translation=(-self.sizeOfUv/2, -self.sizeOfUv/2))
         matrix = AffineTransform(matrix = NP.linalg.inv(self.RAO.getPQ2HDMatrix()))
-        rotate = AffineTransform(rotation = -self.RAO.pAngle)
+
+        qSun = srh_utils.createDisk(self.sizeOfUv, radius, arcsecPerPixel)
         
+        dL = 2*( 30//2) + 1
+        arg_x = NP.linspace(-1.,1,dL)
+        arg_y = NP.linspace(-1.,1,dL)
+        xx, yy = NP.meshgrid(arg_x, arg_y)
+
         gKern =   NP.exp(-0.5*(xx**2 + yy**2))
         qSmoothSun = scipy.signal.fftconvolve(qSun,gKern) / dL**2
         qSmoothSun = qSmoothSun[dL//2:dL//2+self.sizeOfUv,dL//2:dL//2+self.sizeOfUv]
         smoothCoef = qSmoothSun[512, 512]
         qSmoothSun /= smoothCoef
-        qSun_el_hd = warp(qSmoothSun,(shift + (rotate + back_shift)).inverse)
         
-        res = warp(qSun_el_hd, (shift + (matrix + back_shift)).inverse)
+        res = warp(qSmoothSun, (shift + (matrix + back_shift)).inverse)
         qSun_lm = warp(res,(shift + (scale + back_shift)).inverse)
         qSun_lm_fft = NP.fft.fft2(NP.roll(NP.roll(qSun_lm,self.sizeOfUv//2,0),self.sizeOfUv//2,1));
         qSun_lm_fft = NP.roll(NP.roll(qSun_lm_fft,self.sizeOfUv//2,0),self.sizeOfUv//2,1)# / self.sizeOfUv;
@@ -347,7 +341,7 @@ class SrhFitsFile0306(SrhFitsFile):
 #        qSun_lm_conv = NP.fft.fft2(NP.roll(NP.roll(qSun_lm_uv,self.sizeOfUv//2+1,0),self.sizeOfUv//2+1,1));
 #        qSun_lm_conv = NP.roll(NP.roll(qSun_lm_conv,self.sizeOfUv//2-1,0),self.sizeOfUv//2-1,1);
 #        qSun_lm_conv = NP.flip(NP.flip(qSun_lm_conv, 1), 0)
-        self.lm_hd_relation = NP.sum(qSun_lm)/NP.sum(qSun_el_hd)
+        self.lm_hd_relation = NP.sum(qSun_lm)/NP.sum(qSmoothSun)
         self.fftDisk = qSun_lm_fft #qSun_lm_conv, 
     
     def createUvUniform(self):
@@ -392,7 +386,7 @@ class SrhFitsFile0306(SrhFitsFile):
 #        return NP.abs(NP.reshape(qSun_lm_conv, uvSize**2))
     
     def findDisk(self):
-        self.createDisk(980)
+        self.createDiskLmFft(980)
         self.createUvUniform()
         self.x_ini = [1,0,0,1]
         # x_ini = [1,0,0]
@@ -434,7 +428,7 @@ class SrhFitsFile0306(SrhFitsFile):
         self.modelDisk = qSun_lm
         
     def modelDiskConv_unity(self):
-        self.createDisk(980)
+        self.createDiskLmFft(980)
         self.createUvUniform()
         self.createUvPsf(1,0,0,1)
         self.uvDiskConv = self.fftDisk * self.uvPsf# - self.uvLcp
@@ -443,9 +437,9 @@ class SrhFitsFile0306(SrhFitsFile):
         qSun_lm = NP.flip(qSun_lm, 0)
         self.modelDisk = qSun_lm
         
-    def saveAsUvFits(self, filename):
+    def saveAsUvFits(self, filename, **kwargs):
         uv_fits = SrhUVData()
-        uv_fits.write_uvfits_0306(self, filename)
+        uv_fits.write_uvfits_0306(self, filename, **kwargs)
     
     def clean(self, imagename = 'images/0', cell = 2.45, imsize = 1024, niter = 100000, threshold = 60000, stokes = 'RRLL', **kwargs):
         tclean(vis = self.ms_name,
@@ -456,3 +450,67 @@ class SrhFitsFile0306(SrhFitsFile):
                threshold = threshold,
                stokes = stokes,
                **kwargs)
+        
+    def makeMaskModel(self, modelname = 'images/model', maskname = 'images/mask', imagename = 'images/temp', cell = 2.45, imsize = 1024, threshold=100000, stokes = 'RRLL', **kwargs):
+        tclean(vis = self.ms_name,
+               imagename = imagename,
+               cell = cell, 
+               imsize = imsize,
+               niter = 10000,
+               threshold=threshold,
+               stokes = stokes,
+               **kwargs)
+        
+        ia = IA()
+        self.model_name = modelname
+        self.mask_name = maskname
+        os.system('cp -r \"%s.model\" \"%s\"' % (imagename, self.model_name))
+        os.system('cp -r \"%s.model\" \"%s\"' % (imagename, self.mask_name))
+        rmtables(tablenames = 'images/%s.*' % imagename)
+        
+        ia.open(imagename + '.image')
+        self.restoring_beam = ia.restoringbeam()#['beams']['*0']['*0']
+        ia.close()
+        
+        ia.open(self.mask_name)
+        ia_data = ia.getchunk()
+        mask0 = ia_data[:,:,0,0]#.transpose()
+        mask1 = ia_data[:,:,1,0]#.transpose()
+
+        dL = 2*(50//2) + 1
+        arg_x = NP.linspace(-1.,1,dL)
+        arg_y = NP.linspace(-1.,1,dL)
+        xx, yy = NP.meshgrid(arg_x, arg_y)
+        gKern =   NP.exp(-0.5*(xx**2 + yy**2))
+        smooth_mask0 = scipy.signal.fftconvolve(mask0,gKern) / dL**2
+        smooth_mask0 = smooth_mask0[dL//2:dL//2+imsize,dL//2:dL//2+imsize]
+        smooth_mask_cut0 = (smooth_mask0 > 100).astype(int)
+        smooth_mask1 = scipy.signal.fftconvolve(mask1,gKern) / dL**2
+        smooth_mask1 = smooth_mask1[dL//2:dL//2+imsize,dL//2:dL//2+imsize]
+        smooth_mask_cut1 = (smooth_mask1 > 100).astype(int)
+        
+        ia_data_new = NP.zeros_like(ia_data)
+        ia_data_new[:,:,0,0] = smooth_mask_cut0
+        ia_data_new[:,:,1,0] = smooth_mask_cut1
+        ia.putchunk(pixels=ia_data_new)
+        ia.unlock()
+        ia.close()
+        
+        ia.open(self.model_name)
+        ia_data = ia.getchunk()
+        diskTb = self.ZirinQSunTb.getTbAtFrequency(self.freqList[self.frequencyChannel]*1e-6) * 1e3 
+        disk = srh_utils.createDisk(self.sizeOfUv, arcsecPerPixel = cell)
+        dL = 2*( 10//2) + 1
+        kern = NP.ones((dL,dL))
+        disk_model = scipy.signal.fftconvolve(disk,kern) / dL**2
+        disk_model = disk_model[dL//2:dL//2+imsize,dL//2:dL//2+imsize]
+        disk_model[disk_model<1e-10] = 0
+        disk_model = disk_model * diskTb * self.lm_hd_relation[self.frequencyChannel] / self.convolutionNormCoef
+        ia_data[:,:,0,0] = disk_model
+        ia_data[:,:,1,0] = disk_model
+        ia.putchunk(pixels=ia_data)
+        ia.unlock()
+        ia.close()
+        
+        
+        

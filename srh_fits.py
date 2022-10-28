@@ -110,6 +110,8 @@ class SrhFitsFile():
             self.diskLevelLcp = NP.ones(self.freqListLength)
             self.diskLevelRcp = NP.ones(self.freqListLength)
             self.lm_hd_relation = NP.ones(self.freqListLength)
+            self.lcpShift = NP.zeros(self.freqListLength)
+            self.rcpShift = NP.zeros(self.freqListLength)
             
             self.flags_ew = NP.array(())
             self.flags_ns = NP.array(())

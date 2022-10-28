@@ -43,11 +43,12 @@ class SrhUVData(UVData):
         if scan + average > srhFits.dataLength:
             raise Exception('averaging range is larger than data range')
         if average > 1:
-            visRcp = NP.mean(srhFits.visRcp[frequency, scan:scan+average, vis_list], 0)
-            visLcp = NP.mean(srhFits.visLcp[frequency, scan:scan+average, vis_list], 0)
+            visRcp = NP.mean(srhFits.visRcp[frequency, scan:scan+average, vis_list], 1)
+            visLcp = NP.mean(srhFits.visLcp[frequency, scan:scan+average, vis_list], 1)
         else:
             visRcp = srhFits.visRcp[frequency, scan, vis_list].copy()
             visLcp = srhFits.visLcp[frequency, scan, vis_list].copy()
+
             
         visRcp[lastVisibility:] = NP.conj(visRcp[lastVisibility:])
         visLcp[lastVisibility:] = NP.conj(visLcp[lastVisibility:])
@@ -64,7 +65,6 @@ class SrhUVData(UVData):
             visRcp[vis] /= (srhFits.ewAntAmpRcp[frequency, j] * srhFits.nsAntAmpRcp[frequency, i])
         
         for vis_zr in range(len(antZeroRow)):
-            print((vis, vis_zr))
             vis = lastVisibility + vis_zr
             visLcp[vis] *= NP.exp(1j*((srhFits.ewAntPhaLcp[frequency, vis_zr]+srhFits.ewLcpPhaseCorrection[frequency, vis_zr]) - (srhFits.ewAntPhaLcp[frequency, 32] + srhFits.ewLcpPhaseCorrection[frequency, 32])))
             visRcp[vis] *= NP.exp(1j*((srhFits.ewAntPhaRcp[frequency, vis_zr]+srhFits.ewRcpPhaseCorrection[frequency, vis_zr]) - (srhFits.ewAntPhaRcp[frequency, 32] + srhFits.ewRcpPhaseCorrection[frequency, 32])))
