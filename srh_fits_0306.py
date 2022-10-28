@@ -19,6 +19,7 @@ from casatasks import tclean, rmtables
 from casatools import image as IA
 import os
 from .ZirinTb import ZirinTb
+from astropy.io import fits
 
 class SrhFitsFile0306(SrhFitsFile):
     def __init__(self, name):
@@ -511,6 +512,76 @@ class SrhFitsFile0306(SrhFitsFile):
         ia.putchunk(pixels=ia_data)
         ia.unlock()
         ia.close()
+        
+    def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, scan):
+        ia = IA()
+        ia.open(casa_imagename + '.image')
+        restoring_beam = ia.restoringbeam()#['beams']['*0']['*0']
+        rcp = ia.getchunk()[:,:,0,0].transpose()
+        lcp = ia.getchunk()[:,:,1,0].transpose()
+        ia.close()
+
+        shift = AffineTransform(translation=(-imsize/2,-imsize/2))
+        rotate = AffineTransform(rotation = -self.RAO.pAngle)
+        back_shift = AffineTransform(translation=(imsize/2,imsize/2))
+        
+        rcp = warp(rcp,(shift + (rotate + back_shift)).inverse)
+        lcp = warp(lcp,(shift + (rotate + back_shift)).inverse)
+        
+        a,b,ang = restoring_beam['major']['value'],restoring_beam['minor']['value'],restoring_beam['positionangle']['value']
+        fitsTime = srh_utils.ihhmm_format(self.freqTime[self.frequencyChannel, scan])
+    
+        pHeader = fits.Header();
+        pHeader['DATE-OBS']     = self.hduList[0].header['DATE-OBS']
+        pHeader['T-OBS']        = fitsTime#srhRawFits.hduList[0].header['TIME-OBS']
+        pHeader['INSTRUME']     = self.hduList[0].header['INSTRUME']
+        pHeader['ORIGIN']       = self.hduList[0].header['ORIGIN']
+        pHeader['FREQUENC']     = ('%d') % (self.freqList[self.frequencyChannel]/1e3 + 0.5)
+        pHeader['CDELT1']       = cell
+        pHeader['CDELT2']       = cell
+        pHeader['CRPIX1']       = imsize
+        pHeader['CRPIX2']       = imsize
+        pHeader['CTYPE1']       = 'HPLN-TAN'
+        pHeader['CTYPE2']       = 'HPLT-TAN'
+        pHeader['CUNIT1']       = 'arcsec'
+        pHeader['CUNIT2']       = 'arcsec'
+        pHeader['PSF_ELLA']     = a # PSF ellipse A arcsec
+        pHeader['PSF_ELLB']     = b # PSF ellipse B arcsec
+        pHeader['PSF_ELLT']     = ang # PSF ellipse theta deg
+    
+        iImage = rcp + lcp
+        vImage = rcp - lcp
+        saveFitsIhdu = fits.PrimaryHDU(header=pHeader, data=iImage.astype('float32'))
+        saveFitsIpath = fits_imagename + '_I.fit'
+        ewLcpPhaseColumn = fits.Column(name='ewLcpPhase', format='D', array = self.ewAntPhaLcp[self.frequencyChannel,:] + self.ewLcpPhaseCorrection[self.frequencyChannel,:])
+        ewRcpPhaseColumn = fits.Column(name='ewRcpPhase', format='D', array = self.ewAntPhaRcp[self.frequencyChannel,:] + self.ewRcpPhaseCorrection[self.frequencyChannel,:])
+        nsLcpPhaseColumn = fits.Column(name='nsLcpPhase',   format='D', array = self.nsAntPhaLcp[self.frequencyChannel,:] + self.nsLcpPhaseCorrection[self.frequencyChannel,:])
+        nsRcpPhaseColumn = fits.Column(name='nsRcpPhase',   format='D', array = self.nsAntPhaRcp[self.frequencyChannel,:] + self.nsRcpPhaseCorrection[self.frequencyChannel,:])
+        saveFitsIExtHdu = fits.BinTableHDU.from_columns([ewLcpPhaseColumn, ewRcpPhaseColumn, nsLcpPhaseColumn, nsRcpPhaseColumn])
+        hduList = fits.HDUList([saveFitsIhdu, saveFitsIExtHdu])
+        hduList.writeto(saveFitsIpath, overwrite=True)
+        
+        saveFitsVhdu = fits.PrimaryHDU(header=pHeader, data=vImage.astype('float32'))
+        saveFitsVpath = fits_imagename + '_V.fit'
+        hduList = fits.HDUList(saveFitsVhdu)
+        hduList.writeto(saveFitsVpath, overwrite=True)
+        
+    def makeImage(self, path = './', frequency = 0, scan = 0, average = 0, cell = 2.45, imsize = 1024, niter = 100000, threshold = 40000, stokes = 'RRLL', **kwargs):
+        fitsTime = srh_utils.ihhmm_format(self.freqTime[frequency, scan])
+        imagename = 'srh_%sT%s_%04d'%(self.hduList[0].header['DATE-OBS'], fitsTime, self.freqList[frequency]*1e-3 + .5)
+        absname = os.path.join(path, imagename)
+        casa_imagename = os.path.join(path, imagename)
+        self.calibrate(frequency)
+        self.saveAsUvFits(absname+'.fits', frequency=frequency, scan=scan, average=average)
+        self.MSfromUvFits(absname+'.fits', absname+'.ms')
+        self.makeMaskModel(modelname = casa_imagename + '_model', maskname = casa_imagename + '_mask', imagename = casa_imagename + '_temp')
+        a,b,ang = self.restoring_beam['major']['value'],self.restoring_beam['minor']['value'],self.restoring_beam['positionangle']['value']
+        rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
+        self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
+        self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan)
+        rmtables(casa_imagename + '*')
+        rmtables(absname + '.ms')
+        os.system('rm \"' + absname + '.fits\"')
         
         
         

@@ -404,8 +404,8 @@ class SrhFitsFile0612(SrhFitsFile):
         self.restoring_beam = ia.restoringbeam()['beams']['*0']['*0']
         ia_data = ia.getchunk()
         mask = NP.zeros_like(ia_data)
-        im1 = ia_data[:,:,0,0].transpose()
-        im2 = ia_data[:,:,1,0].transpose()
+        im1 = ia_data[:,:,0,0]#.transpose()
+        im2 = ia_data[:,:,1,0]#.transpose()
         
         disk_mask = srh_utils.createDisk(self.sizeOfUv, arcsecPerPixel = cell, radius = 1100).astype(bool)
         
@@ -485,7 +485,7 @@ class SrhFitsFile0612(SrhFitsFile):
         hduList = fits.HDUList(saveFitsVhdu)
         hduList.writeto(saveFitsVpath, overwrite=True)
         
-    def makeImage(self, path = './', frequency = 0, scan = 0, average = 0, cell = 2.45, imsize = 1024, niter = 100000, threshold = 40000, stokes = 'RRLL', **kwargs):
+    def makeImage(self, path = './', cleantables = True, frequency = 0, scan = 0, average = 0, cell = 2.45, imsize = 1024, niter = 100000, threshold = 40000, stokes = 'RRLL', **kwargs):
         fitsTime = srh_utils.ihhmm_format(self.freqTime[frequency, scan])
         imagename = 'srh_%sT%s_%04d'%(self.hduList[0].header['DATE-OBS'], fitsTime, self.freqList[frequency]*1e-3 + .5)
         absname = os.path.join(path, imagename)
@@ -498,6 +498,7 @@ class SrhFitsFile0612(SrhFitsFile):
         rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
         self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
         self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan)
-        rmtables(casa_imagename + '*')
-        rmtables(absname + '.ms')
-        os.system('rm \"' + absname + '.fits\"')
+        if cleantables:
+            rmtables(casa_imagename + '*')
+            rmtables(absname + '.ms')
+            os.system('rm \"' + absname + '.fits\"')

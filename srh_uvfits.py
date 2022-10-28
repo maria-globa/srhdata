@@ -209,6 +209,21 @@ class SrhUVData(UVData):
         self.nsample_array = NP.full((self.Nblts,1,self.Nfreqs,self.Npols),1,dtype='float')
         self.vis_units = 'uncalib'
 
+        flags_ew_lcp = NP.where(srhFits.ewAntAmpLcp[frequency] == 1e6)[0]
+        flags_ew_rcp = NP.where(srhFits.ewAntAmpRcp[frequency] == 1e6)[0]
+        flags_ew = NP.unique(NP.append(flags_ew_lcp, flags_ew_rcp))
+        flags_ns_lcp = NP.where(srhFits.nsAntAmpLcp[frequency] == 1e6)[0]
+        flags_ns_rcp = NP.where(srhFits.nsAntAmpRcp[frequency] == 1e6)[0]
+        flags_ns = NP.unique(NP.append(flags_ns_lcp, flags_ns_rcp))
+        
+        flags_arr = NP.zeros((64,128), dtype = 'bool')
+        flags_arr[flags_ns,:] = True
+        flags_arr[:,flags_ew] = True
+        flags_arr = NP.reshape(flags_arr, (64*128))
+        
+        self.flag_array[:,0,0,0] = flags_arr
+        self.flag_array[:,0,0,1] = flags_arr
+
         self.antenna_positions = NP.zeros((self.Nants_telescope,3))
         for ant in NP.arange(0, 128):
             self.antenna_positions[ant] = [0, (ant - 63.5) * 4.9, 0]

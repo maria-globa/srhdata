@@ -30,8 +30,8 @@ if __name__ == '__main__':
 # from casatasks import importuvfits,tclean
 # test_num = 16
 
-# srh_f = SrhFitsFile0612('/home/mariagloba/Work/Python Scripts/6-12/fits/20220502/srh_0612_20220502T030329.fit')
-# srh_f.makeImage(path = '/home/mariagloba/Work/Python Scripts/srhdata_tests', scan = 2, average = 10, frequency = 9, deconvolver = 'multiscale', scales = [1,2,3,4,5,10,15,30])
+# srh_f = SrhFitsFile0612('/home/mariagloba/Work/Python Scripts/6-12/fits/20220515/srh_0612_20220515T033902.fit')
+# srh_f.makeImage(path = '/home/mariagloba/Work/Python Scripts/srhdata_tests', cleantables = False, scan = 2, average = 10, frequency = 0, deconvolver = 'multiscale', scales = [1,2,3,4,5,10,15,30])
 # srh_f.loadGains('/home/mariagloba/Work/Python Scripts/6-12/fits/20220502/gains_ns.json')
 # srh_f.vis2uv(0, average=20)
 # srh_f.centerDisk()
