@@ -194,13 +194,13 @@ class SrhFitsFile():
     def saveGains(self, filename):
         currentGainsDict = {}
         currentGainsDict['ewPhaseLcp'] = (self.ewAntPhaLcp + self.ewLcpPhaseCorrection).tolist()
-        currentGainsDict['nsPhaseLcp'] = (self.nAntPhaLcp + self.nLcpPhaseCorrection).tolist()
+        currentGainsDict['nsPhaseLcp'] = (self.nsAntPhaLcp + self.nsLcpPhaseCorrection).tolist()
         currentGainsDict['ewPhaseRcp'] = (self.ewAntPhaRcp + self.ewRcpPhaseCorrection).tolist()
-        currentGainsDict['nsPhaseRcp'] = (self.nAntPhaRcp + self.nRcpPhaseCorrection).tolist()
+        currentGainsDict['nsPhaseRcp'] = (self.nsAntPhaRcp + self.nsRcpPhaseCorrection).tolist()
         currentGainsDict['ewAmpLcp'] = self.ewAntAmpLcp.tolist()
-        currentGainsDict['nsAmpLcp'] = self.nAntAmpLcp.tolist()
+        currentGainsDict['nsAmpLcp'] = self.nsAntAmpLcp.tolist()
         currentGainsDict['ewAmpRcp'] = self.ewAntAmpRcp.tolist()
-        currentGainsDict['nsAmpRcp'] = self.nAntAmpRcp.tolist()
+        currentGainsDict['nsAmpRcp'] = self.nsAntAmpRcp.tolist()
         currentGainsDict['rcpShift'] = self.rcpShift.tolist()
         currentGainsDict['lcpShift'] = self.lcpShift.tolist()
         currentGainsDict['lm_hd_relation'] = self.lm_hd_relation.tolist()

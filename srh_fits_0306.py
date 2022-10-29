@@ -452,7 +452,7 @@ class SrhFitsFile0306(SrhFitsFile):
                stokes = stokes,
                **kwargs)
         
-    def makeMask(self, maskname = 'images/mask', cell = 2.45, imsize = 1024, threshold=200000, stokes = 'RRLL', **kwargs):
+    def makeMask(self, maskname = 'images/mask', cell = 2.45, imsize = 1024, threshold=100000, stokes = 'RRLL', **kwargs):
         freq_current = self.frequencyChannel
         self.setFrequencyChannel(0)
         self.calibrate(freq = 0)
@@ -512,7 +512,7 @@ class SrhFitsFile0306(SrhFitsFile):
         ia = IA()
         self.model_name = modelname
         os.system('cp -r \"%s.model\" \"%s\"' % (imagename, self.model_name))
-        rmtables(tablenames = 'images/%s.*' % imagename)
+        rmtables(tablenames = '%s.*' % imagename)
         
         ia.open(imagename + '.image')
         self.restoring_beam = ia.restoringbeam()['beams']['*0']['*0']
@@ -537,7 +537,10 @@ class SrhFitsFile0306(SrhFitsFile):
     def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, scan):
         ia = IA()
         ia.open(casa_imagename + '.image')
-        restoring_beam = ia.restoringbeam()#['beams']['*0']['*0']
+        try:
+            restoring_beam = ia.restoringbeam()['beams']['*0']['*0']
+        except:
+            restoring_beam = ia.restoringbeam()
         rcp = ia.getchunk()[:,:,0,0].transpose()
         lcp = ia.getchunk()[:,:,1,0].transpose()
         ia.close()
@@ -587,24 +590,32 @@ class SrhFitsFile0306(SrhFitsFile):
         hduList = fits.HDUList(saveFitsVhdu)
         hduList.writeto(saveFitsVpath, overwrite=True)
         
-    def makeImage(self, path = './', cleantables = True, frequency = 0, scan = 0, average = 0, cell = 2.45, imsize = 1024, niter = 100000, threshold = 40000, stokes = 'RRLL', **kwargs):
+    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, clean_disk = True, cell = 2.45, imsize = 1024, niter = 100000, threshold = 5000000, stokes = 'RRLL', **kwargs):
         fitsTime = srh_utils.ihhmm_format(self.freqTime[frequency, scan])
         imagename = 'srh_%sT%s_%04d'%(self.hduList[0].header['DATE-OBS'], fitsTime, self.freqList[frequency]*1e-3 + .5)
-        maskname = 'srh_%sT%s_mask'%(self.hduList[0].header['DATE-OBS'], fitsTime)
+        maskname = os.path.join(path, 'srh_%sT%s_mask'%(self.hduList[0].header['DATE-OBS'], fitsTime))
         absname = os.path.join(path, imagename)
         casa_imagename = os.path.join(path, imagename)
-        self.makeMask(maskname = os.path.join(path,maskname))
-        self.calibrate(frequency)
+        if not os.path.exists(maskname):
+            self.makeMask(maskname = maskname, threshold = 1e7)
+        if calibtable == '':
+            self.calibrate(frequency)
+        else:
+            self.loadGains(calibtable)
         self.saveAsUvFits(absname+'.fits', frequency=frequency, scan=scan, average=average)
         self.MSfromUvFits(absname+'.fits', absname+'.ms')
-        self.makeModel(modelname = casa_imagename + '_model', imagename = casa_imagename + '_temp')
-        a,b,ang = self.restoring_beam['major']['value'],self.restoring_beam['minor']['value'],self.restoring_beam['positionangle']['value']
-        rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
-        self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
+        if clean_disk:
+            self.makeModel(modelname = casa_imagename + '_model', imagename = casa_imagename + '_temp')
+            a,b,ang = self.restoring_beam['major']['value'],self.restoring_beam['minor']['value'],self.restoring_beam['positionangle']['value']
+            rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
+            self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
+        else:
+            self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, **kwargs)
         self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan)
-        rmtables(casa_imagename + '*')
-        rmtables(absname + '.ms')
-        os.system('rm \"' + absname + '.fits\"')
+        if remove_tables:
+            rmtables(casa_imagename + '*')
+            rmtables(absname + '.ms')
+            os.system('rm \"' + absname + '.fits\"')
         
         
         

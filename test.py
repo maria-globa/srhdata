@@ -35,4 +35,4 @@ if __name__ == '__main__':
 
 
 # srh_f = SrhFitsFile0306('/home/mariagloba/Work/fits/20220614/srh_0306_20220614T034539.fit')
-# srh_f.makeImage(path = '/home/mariagloba/Work/Python Scripts/srhdata_tests', cleantables = False, scan = 2, average = 10, frequency = 3)#, deconvolver = 'multiscale', scales = [1,2,3,4,5,10,15,30])
+# srh_f.makeImage(path = '/home/mariagloba/Work/Python Scripts/srhdata_tests', remove_tables = False, clean_disk = False, scan = 5, average = 10, frequency = 3)#, deconvolver = 'multiscale', scales = [1,2,3,4,5,10,15,30])
