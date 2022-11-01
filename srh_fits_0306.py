@@ -593,11 +593,11 @@ class SrhFitsFile0306(SrhFitsFile):
     def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, clean_disk = True, cell = 2.45, imsize = 1024, niter = 100000, threshold = 5000000, stokes = 'RRLL', **kwargs):
         fitsTime = srh_utils.ihhmm_format(self.freqTime[frequency, scan])
         imagename = 'srh_%sT%s_%04d'%(self.hduList[0].header['DATE-OBS'], fitsTime, self.freqList[frequency]*1e-3 + .5)
-        maskname = os.path.join(path, 'srh_%sT%s_mask'%(self.hduList[0].header['DATE-OBS'], fitsTime))
+        self.mask_name = os.path.join(path, 'srh_%sT%s_mask'%(self.hduList[0].header['DATE-OBS'], fitsTime))
         absname = os.path.join(path, imagename)
         casa_imagename = os.path.join(path, imagename)
-        if not os.path.exists(maskname):
-            self.makeMask(maskname = maskname, threshold = 1e7)
+        if not os.path.exists(self.mask_name):
+            self.makeMask(maskname = self.mask_name, threshold = 1e7)
         if calibtable == '':
             self.calibrate(frequency)
         else:
