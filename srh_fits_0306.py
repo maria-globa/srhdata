@@ -32,6 +32,7 @@ class SrhFitsFile0306(SrhFitsFile):
         self.antZeroRow = self.hduList[3].data['ant_zero_row'][:97]
         self.lcpShift = NP.ones(self.freqListLength) # 0-frequency component in the spectrum
         self.rcpShift = NP.ones(self.freqListLength)
+        self.convolutionNormCoef = 44.8
         
     def solarPhase(self, freq):
         u,v,w = base2uvw0306(self.RAO.hAngle, self.RAO.declination, 98, 99)
@@ -512,11 +513,12 @@ class SrhFitsFile0306(SrhFitsFile):
         ia = IA()
         self.model_name = modelname
         os.system('cp -r \"%s.model\" \"%s\"' % (imagename, self.model_name))
-        rmtables(tablenames = '%s.*' % imagename)
         
         ia.open(imagename + '.image')
         self.restoring_beam = ia.restoringbeam()['beams']['*0']['*0']
         ia.close()
+        
+        rmtables(tablenames = '%s.*' % imagename)
         
         ia.open(self.model_name)
         ia_data = ia.getchunk()
@@ -590,14 +592,14 @@ class SrhFitsFile0306(SrhFitsFile):
         hduList = fits.HDUList(saveFitsVhdu)
         hduList.writeto(saveFitsVpath, overwrite=True)
         
-    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, clean_disk = True, cell = 2.45, imsize = 1024, niter = 100000, threshold = 5000000, stokes = 'RRLL', **kwargs):
+    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, clean_disk = True, cell = 2.45, imsize = 1024, niter = 100000, threshold = 100000, stokes = 'RRLL', **kwargs):
         fitsTime = srh_utils.ihhmm_format(self.freqTime[frequency, scan])
         imagename = 'srh_%sT%s_%04d'%(self.hduList[0].header['DATE-OBS'], fitsTime, self.freqList[frequency]*1e-3 + .5)
         self.mask_name = os.path.join(path, 'srh_%sT%s_mask'%(self.hduList[0].header['DATE-OBS'], fitsTime))
         absname = os.path.join(path, imagename)
         casa_imagename = os.path.join(path, imagename)
         if not os.path.exists(self.mask_name):
-            self.makeMask(maskname = self.mask_name, threshold = 1e7)
+            self.makeMask(maskname = self.mask_name)
         if calibtable == '':
             self.calibrate(frequency)
         else:

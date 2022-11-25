@@ -37,5 +37,6 @@ test_num = 16
 # srh_f = SrhFitsFile0306('/home/mariagloba/Work/fits/20220614/srh_0306_20220614T034539.fit')
 # srh_f.makeImage(path = '/home/mariagloba/Work/Python Scripts/srhdata_tests', remove_tables = False, clean_disk = False, scan = 5, average = 10, frequency = 3)#, deconvolver = 'multiscale', scales = [1,2,3,4,5,10,15,30])
 
-srh_f = SrhFitsFile0306('/home/maria/Work/SRH imaging/3-6/fits/20220614/srh_0306_20220614T034539.fit')
-srh_f.makeImage(path = '/home/maria/Work/SRH imaging/srhdata_tests', remove_tables = True, clean_disk = True, scan = 5, average = 10, frequency = 3)#, deconvolver = 'multiscale', scales = [1,2,3,4,5,10,15,30])
+srh_f = SrhFitsFile0306('/home/mariagloba/Work/fits/2021/04/30/srh_20210430T030553.fit')
+srh_f.makeImage(path = '/home/mariagloba/Work/Python Scripts/srhdata_tests', remove_tables = True, clean_disk = False, scan = 0, average = 20, frequency = 0)#, deconvolver = 'multiscale', scales = [1,2,3,4,5,10,15,30])
+
