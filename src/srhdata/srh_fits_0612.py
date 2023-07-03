@@ -29,6 +29,7 @@ class SrhFitsFile0612(SrhFitsFile):
         self.antNumberNS = 64
         self.centering_ftol = 1e-14
         self.convolutionNormCoef = 18.7
+        self.out_filenames = []
         super().open()
         
     def solarPhase(self, freq):
@@ -524,7 +525,8 @@ class SrhFitsFile0612(SrhFitsFile):
             hduList = fits.HDUList(saveFitsLCPhdu)
             hduList.writeto(saveFitsLCPpath, overwrite=True)
             
-            self.out_filenames = [saveFitsRCPpath, saveFitsLCPpath]
+            self.out_filenames.append(saveFitsRCPpath)
+            self.out_filenames.append(saveFitsLCPpath)
             
         else:
             iImage = (rcp + lcp)/2
@@ -539,18 +541,19 @@ class SrhFitsFile0612(SrhFitsFile):
             hduList = fits.HDUList(saveFitsVhdu)
             hduList.writeto(saveFitsVpath, overwrite=True)
             
-            self.out_filenames = [saveFitsIpath, saveFitsVpath]
+            self.out_filenames.append(saveFitsIpath)
+            self.out_filenames.append(saveFitsVpath)
         
-    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, compress_image = True, RL = False, cell = 2.45, imsize = 1024, niter = 100000, threshold = 40000, stokes = 'RRLL', **kwargs):
+    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, compress_image = True, RL = False, calibrate = True, cell = 2.45, imsize = 1024, niter = 100000, threshold = 40000, stokes = 'RRLL', **kwargs):
         fitsTime = srh_utils.ihhmm_format(self.freqTime[frequency, scan])
         imagename = 'srh_%sT%s_%04d'%(self.hduList[0].header['DATE-OBS'].replace('-',''), fitsTime.replace(':',''), self.freqList[frequency]*1e-3 + .5)
         absname = os.path.join(path, imagename)
         casa_imagename = os.path.join(path, imagename)
-        if calibtable == '':
-            self.calibrate(frequency)
-        else:
+        if calibtable!='':
             self.setFrequencyChannel(frequency)
             self.loadGains(calibtable)
+        elif calibrate:
+            self.calibrate(frequency)
         self.saveAsUvFits(absname+'.fits', frequency=frequency, scan=scan, average=average)
         self.MSfromUvFits(absname+'.fits', absname+'.ms')
         
@@ -564,3 +567,31 @@ class SrhFitsFile0612(SrhFitsFile):
             rmtables(absname + '.ms')
             os.system('rm -rf \"' + absname + '.ms.flagversions\"')
             os.system('rm \"' + absname + '.fits\"')
+            
+    def makeSet(self, frequencies = [0], scans = [0], start_scan = 0, step = 0, calibrate_each_scan = False, **kwargs):
+        if type(frequencies) is not list and type(frequencies) is not str: frequencies = [frequencies]
+        if type(scans) is not list: scans = [scans]
+        
+        if frequencies == 'all':
+            frequencies = NP.arange(0, self.freqListLength)
+            
+        for f in frequencies:
+            if step:
+                for s in range(start_scan, self.dataLength, step):
+                    if calibrate_each_scan:
+                        self.makeImage(frequency = f, scan = s, calibrate = True, **kwargs)
+                    else:
+                        if s == start_scan:
+                            self.makeImage(frequency = f, scan = s, calibrate = True, **kwargs)
+                        else:
+                            self.makeImage(frequency = f, scan = s, calibrate = False, **kwargs)
+                    
+            else:
+                for s in scans:
+                    if calibrate_each_scan:
+                        self.makeImage(frequency = f, scan = s, calibrate = True, **kwargs)
+                    else:
+                        if s == scans[0]:
+                            self.makeImage(frequency = f, scan = s, calibrate = True, **kwargs)
+                        else:
+                            self.makeImage(frequency = f, scan = s, calibrate = False, **kwargs)
