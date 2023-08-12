@@ -15,7 +15,7 @@ import srhdata
 import ftplib
 ftp = ftplib.FTP('ftp.rao.istp.ac.ru', 'anonymous', 'anonymous')
 ftp.cwd('SRH/SRH0612/2023/06/12')
-filename = 'srh_0612_20220113T030033.fit'
+filename = 'srh_0612_20230612T030033.fit'
 with open( filename, 'wb' ) as file :
     ftp.retrbinary('RETR %s' % filename, file.write)
     file.close()
