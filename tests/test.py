@@ -14,15 +14,15 @@ import srhdata
 
 import ftplib
 ftp = ftplib.FTP('ftp.rao.istp.ac.ru', 'anonymous', 'anonymous')
-ftp.cwd('SRH/SRH0612/2022/01/13')
-filename = 'srh_0612_20220113T031226.fit'
+ftp.cwd('SRH/SRH0612/2023/06/12')
+filename = 'srh_0612_20220113T030033.fit'
 with open( filename, 'wb' ) as file :
     ftp.retrbinary('RETR %s' % filename, file.write)
     file.close()
 
 class TestBasic(unittest.TestCase):
     def test_openFits(self):
-        file = srhdata.open('srh_0612_20220113T031226.fit')
+        file = srhdata.open(filename)
         self.assertEqual(file.isOpen, True)
         
 if __name__ == '__main__':
