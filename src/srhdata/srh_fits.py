@@ -65,8 +65,8 @@ class SrhFitsFile():
             self.visListLength = self.hduList[1].data['vis_lcp'].size // self.freqListLength // self.dataLength;
             self.visLcp = NP.reshape(self.hduList[1].data['vis_lcp'],(self.freqListLength,self.dataLength,self.visListLength));
             self.visRcp = NP.reshape(self.hduList[1].data['vis_rcp'],(self.freqListLength,self.dataLength,self.visListLength));
-            self.visLcp /= float(self.hduList[0].header['VIS_MAX'])
-            self.visRcp /= float(self.hduList[0].header['VIS_MAX'])
+            # self.visLcp /= float(self.hduList[0].header['VIS_MAX'])
+            # self.visRcp /= float(self.hduList[0].header['VIS_MAX'])
             self.ampLcp = NP.reshape(self.hduList[1].data['amp_lcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
             self.ampRcp = NP.reshape(self.hduList[1].data['amp_rcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
             ampScale = float(self.hduList[0].header['VIS_MAX']) / 128.
@@ -75,8 +75,8 @@ class SrhFitsFile():
             try:
                 self.ampLcp_c = NP.reshape(self.hduList[1].data['amp_c_lcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
                 self.ampRcp_c = NP.reshape(self.hduList[1].data['amp_c_rcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
-                self.ampLcp_c = self.ampLcp_c.astype(float) / ampScale
-                self.ampRcp_c = self.ampRcp_c.astype(float) / ampScale
+                # self.ampLcp_c = self.ampLcp_c.astype(float) / ampScale
+                # self.ampRcp_c = self.ampRcp_c.astype(float) / ampScale
             except:
                 pass
             
@@ -127,7 +127,7 @@ class SrhFitsFile():
             self.calibrationResultLcp = NP.zeros_like(self.x_ini_lcp)
             self.calibrationResultRcp = NP.zeros_like(self.x_ini_rcp)
             
-            
+            self.beam_sr = NP.zeros(self.freqListLength)
             
         except FileNotFoundError:
             print('File %s  not found'%self.filename);
@@ -139,8 +139,8 @@ class SrhFitsFile():
             dataLength = hduList[1].data['time'].size // self.freqListLength;
             visLcp = NP.reshape(hduList[1].data['vis_lcp'],(self.freqListLength,dataLength,self.visListLength));
             visRcp = NP.reshape(hduList[1].data['vis_rcp'],(self.freqListLength,dataLength,self.visListLength));
-            visLcp /= float(self.hduList[0].header['VIS_MAX'])
-            visRcp /= float(self.hduList[0].header['VIS_MAX'])
+            # visLcp /= float(self.hduList[0].header['VIS_MAX'])
+            # visRcp /= float(self.hduList[0].header['VIS_MAX'])
             ampLcp = NP.reshape(hduList[1].data['amp_lcp'],(self.freqListLength,dataLength,self.antennaNumbers.size));
             ampRcp = NP.reshape(hduList[1].data['amp_rcp'],(self.freqListLength,dataLength,self.antennaNumbers.size));
             ampScale = float(self.hduList[0].header['VIS_MAX']) / 128.
@@ -156,8 +156,8 @@ class SrhFitsFile():
             try:
                 ampLcp_c = NP.reshape(hduList[1].data['amp_c_lcp'],(self.freqListLength,dataLength,self.antennaNumbers.size));
                 ampRcp_c = NP.reshape(hduList[1].data['amp_c_rcp'],(self.freqListLength,dataLength,self.antennaNumbers.size));
-                ampLcp_c = ampLcp_c.astype(float) / ampScale
-                ampRcp_c = ampRcp_c.astype(float) / ampScale
+                # ampLcp_c = ampLcp_c.astype(float) / ampScale
+                # ampRcp_c = ampRcp_c.astype(float) / ampScale
                 self.ampLcp_c = NP.concatenate((self.ampLcp_c, ampLcp_c), axis = 1)
                 self.ampRcp_c = NP.concatenate((self.ampRcp_c, ampRcp_c), axis = 1)
             except:

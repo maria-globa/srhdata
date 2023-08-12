@@ -20,6 +20,8 @@ from casatools import image as IA
 import os
 from .ZirinTb import ZirinTb
 from astropy.io import fits
+import skimage.measure
+from pathlib import Path
 
 class SrhFitsFile0306(SrhFitsFile):
     def __init__(self, name):
@@ -34,6 +36,94 @@ class SrhFitsFile0306(SrhFitsFile):
         self.rcpShift = NP.ones(self.freqListLength)
         self.convolutionNormCoef = 44.8
         self.out_filenames = []
+        self.normalizeFlux()
+        
+    def normalizeFlux(self):
+        file = Path(__file__).resolve()
+        parent = str(file.parent)
+        zerosFits = fits.open(parent + '/srh_0306_cp_zeros.fits')
+        corrZeros = zerosFits[2].data['corrI']
+        fluxZeros = zerosFits[2].data['fluxI']
+
+        fluxNormFits = fits.open(parent + '/srh_0306_cp_fluxNorm.fits')
+        fluxNormI = fluxNormFits[2].data['fluxNormI']
+        
+        # max_amp = float(self.hduList[0].header['VIS_MAX']) / 128.
+        
+        self.lcpSigmaCSrc = NP.sqrt(self.ampLcp_c)# * max_amp)
+        self.rcpSigmaCSrc = NP.sqrt(self.ampRcp_c)# * max_amp)
+        
+        self.rcpSigmaCSrc[self.rcpSigmaCSrc < 1000] = 1e6
+        self.lcpSigmaCSrc[self.lcpSigmaCSrc < 1000] = 1e6
+        
+        for vis in range(self.visListLength):
+            AB = self.visIndex2antIndex(vis)
+            indA = NP.where(self.antennaNumbers == str(AB[0]))[0][0]
+            indB = NP.where(self.antennaNumbers == str(AB[1]))[0][0]
+        
+            ampA = NP.abs(self.ampLcp_c[:,:,indA])
+            ampB = NP.abs(self.ampLcp_c[:,:,indB])
+            self.visLcp[:,:,vis] = self.visLcp[:,:,vis]/NP.sqrt(ampA*ampB)
+            
+            ampA = NP.abs(self.ampRcp_c[:,:,indA])
+            ampB = NP.abs(self.ampRcp_c[:,:,indB])
+            self.visRcp[:,:,vis] = self.visRcp[:,:,vis]/NP.sqrt(ampA*ampB)
+            
+        ampFluxRcp = NP.mean(self.ampRcp, axis = 2)
+        ampFluxLcp = NP.mean(self.ampLcp, axis = 2)
+
+            
+        self.tempRcp = NP.zeros(self.freqListLength)
+        self.tempLcp = NP.zeros(self.freqListLength)
+        
+        self.beam()
+        for ff in range(self.freqListLength):
+            ampFluxRcp[ff,:] -= fluxZeros[ff]
+            ampFluxRcp[ff,:] *= fluxNormI[ff] * 1e-22
+            ampFluxLcp[ff,:] -= fluxZeros[ff]
+            ampFluxLcp[ff,:] *= fluxNormI[ff] * 1e-22
+            
+            lam = scipy.constants.c/(self.freqList[ff]*1e3)
+            
+            self.tempLcp[ff] = NP.mean(ampFluxLcp[ff]) * lam**2 / (2*scipy.constants.k * self.beam_sr[ff])
+            self.tempRcp[ff] = NP.mean(ampFluxRcp[ff]) * lam**2 / (2*scipy.constants.k * self.beam_sr[ff])
+            
+            self.visLcp[ff,:,:] *= NP.mean(self.tempLcp[ff])
+            self.visRcp[ff,:,:] *= NP.mean(self.tempRcp[ff])
+            
+            self.visLcp[ff,:,:] *= 2 # flux is divided by 2 for R and L
+            self.visRcp[ff,:,:] *= 2
+            
+    def beam(self):
+        self.setFrequencyChannel(0)
+        self.vis2uv(0, PSF = True)
+        self.uv2lmImage()
+        self.lm2Heliocentric(image_scale = 2)
+        arcsecPerPix = self.arcsecPerPixel / 2.
+        beam = self.lcp
+        contours = (skimage.measure.find_contours(beam, 0.5*beam.max()))[0]
+        con = NP.zeros_like(contours)
+        con[:,1] = contours[:,0]
+        con[:,0] = contours[:,1]
+        sunEll = skimage.measure.EllipseModel()
+        sunEll.estimate(con)
+        major = NP.deg2rad(sunEll.params[2] * arcsecPerPix / 3600.)
+        minor = NP.deg2rad(sunEll.params[3] * arcsecPerPix / 3600.)
+        self.beam_sr[0] = NP.pi * major * minor / NP.log(2)
+        for ff in range(1, self.freqListLength):
+            self.beam_sr[ff] = self.beam_sr[0] * (self.freqList[0]/self.freqList[ff])**2
+        """
+        In original formula (https://science.nrao.edu/facilities/vla/proposing/TBconv)
+        theta_maj ang theta_min are full widths of an ellipse, that is why there is
+        4 in denominator.
+        Here major and minor are semi-axes.
+        """
+     
+    def visIndex2antIndex(self, visIndex):
+        if visIndex > self.antennaA.size or visIndex < 0:
+            Exception('visIndex is out of range')
+        else:
+            return self.antennaA[visIndex], self.antennaB[visIndex]
         
     def solarPhase(self, freq):
         u,v,w = base2uvw0306(self.RAO.hAngle, self.RAO.declination, 98, 99)
@@ -297,8 +387,8 @@ class SrhFitsFile0306(SrhFitsFile):
         self.rcp = NP.roll(NP.roll(self.rcp,self.sizeOfUv//2-1,0),self.sizeOfUv//2-1,1);
         self.rcp = NP.flip(self.rcp, 1)
         
-    def lm2Heliocentric(self):
-        scaling = self.RAO.getPQScale(self.sizeOfUv, NP.deg2rad(self.arcsecPerPixel * (self.sizeOfUv - 1)/3600.)*2, self.freqList[self.frequencyChannel]*1e3)
+    def lm2Heliocentric(self, image_scale = 0.5):
+        scaling = self.RAO.getPQScale(self.sizeOfUv, NP.deg2rad(self.arcsecPerPixel * (self.sizeOfUv - 1)/3600.)/image_scale, self.freqList[self.frequencyChannel]*1e3)
         scale = AffineTransform(scale=(self.sizeOfUv/scaling[0], self.sizeOfUv/scaling[1]))
         shift = AffineTransform(translation=(-self.sizeOfUv/2,-self.sizeOfUv/2))
         rotate = AffineTransform(rotation = self.RAO.pAngle)
@@ -389,9 +479,10 @@ class SrhFitsFile0306(SrhFitsFile):
 #        return NP.abs(NP.reshape(qSun_lm_conv, uvSize**2))
     
     def findDisk(self):
+        Tb = self.ZirinQSunTb.getTbAtFrequency(self.freqList[self.frequencyChannel]*1e-6) * 1e3
         self.createDiskLmFft(980)
         self.createUvUniform()
-        self.x_ini = [1,0,0,1]
+        self.x_ini = [Tb/self.convolutionNormCoef,0,0,1]
         # x_ini = [1,0,0]
         self.center_ls_res_lcp = least_squares(self.diskDiff, self.x_ini, args = (0,))
         _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _shiftLcp = self.center_ls_res_lcp['x']
@@ -400,17 +491,10 @@ class SrhFitsFile0306(SrhFitsFile):
         
         self.diskLevelLcp[self.frequencyChannel] = _diskLevelLcp
         self.diskLevelRcp[self.frequencyChannel] = _diskLevelRcp
-        
-        Tb = self.ZirinQSunTb.getTbAtFrequency(self.freqList[self.frequencyChannel]*1e-6) * 1e3
-        
+
         self.lcpShift[self.frequencyChannel] = self.lcpShift[self.frequencyChannel]/(_shiftLcp * self.convolutionNormCoef / Tb)
         self.rcpShift[self.frequencyChannel] = self.rcpShift[self.frequencyChannel]/(_shiftRcp * self.convolutionNormCoef / Tb)
-        
-        self.ewAntAmpLcp[self.frequencyChannel][self.ewAntAmpLcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelLcp*self.convolutionNormCoef / Tb)
-        self.nsAntAmpLcp[self.frequencyChannel][self.nsAntAmpLcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelLcp*self.convolutionNormCoef / Tb)
-        self.ewAntAmpRcp[self.frequencyChannel][self.ewAntAmpRcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelRcp*self.convolutionNormCoef / Tb)
-        self.nsAntAmpRcp[self.frequencyChannel][self.nsAntAmpRcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelRcp*self.convolutionNormCoef / Tb)
-        
+
         self.ewSlopeLcp[self.frequencyChannel] = srh_utils.wrap(self.ewSlopeLcp[self.frequencyChannel] + _ewSlopeLcp)
         self.nsSlopeLcp[self.frequencyChannel] = srh_utils.wrap(self.nsSlopeLcp[self.frequencyChannel] + _nsSlopeLcp)
         self.ewSlopeRcp[self.frequencyChannel] = srh_utils.wrap(self.ewSlopeRcp[self.frequencyChannel] + _ewSlopeRcp)
@@ -550,7 +634,7 @@ class SrhFitsFile0306(SrhFitsFile):
         disk_model = scipy.signal.fftconvolve(disk,kern) / dL**2
         disk_model = disk_model[dL//2:dL//2+imsize,dL//2:dL//2+imsize]
         disk_model[disk_model<1e-10] = 0
-        disk_model = disk_model * diskTb * self.lm_hd_relation[self.frequencyChannel] / self.convolutionNormCoef
+        disk_model = disk_model * diskTb * self.lm_hd_relation[self.frequencyChannel] / self.convolutionNormCoef# / 4
         ia_data[:,:,0,0] = disk_model
         ia_data[:,:,1,0] = disk_model
         ia.putchunk(pixels=ia_data)
@@ -673,6 +757,8 @@ class SrhFitsFile0306(SrhFitsFile):
             rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
             self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
         else:
+            # if clean_disk == False  -> add shift!
+            
             self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, **kwargs)
         self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan, compress_image = compress_image, RL = RL)
         if remove_tables:
