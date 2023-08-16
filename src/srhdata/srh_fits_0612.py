@@ -32,7 +32,8 @@ class SrhFitsFile0612(SrhFitsFile):
         self.convolutionNormCoef = 18.7
         self.out_filenames = []
         super().open()
-        self.normalizeFlux()
+        if self.corr_amp_exist:
+            self.normalizeFlux()
         
     def normalizeFlux(self):
         file = Path(__file__).resolve()
@@ -81,6 +82,8 @@ class SrhFitsFile0612(SrhFitsFile):
             
             self.visLcp[ff,:,:] *= 2 # flux is divided by 2 for R and L
             self.visRcp[ff,:,:] *= 2
+        
+        self.flux_calibrated = True
             
     def beam(self):
         self.setFrequencyChannel(0)
@@ -404,25 +407,56 @@ class SrhFitsFile0612(SrhFitsFile):
             diff = self.uvRcp - uvDisk
         return srh_utils.complex_to_real(diff[self.uvUniform!=0])
     
+    def diskDiff_stair_fluxNorm(self, x, pol, T):
+        self.createUvPsf(T, x[0], x[1], x[2])
+        uvDisk = self.fftDisk * self.uvPsf
+        if pol == 0:
+            diff = self.uvLcp - uvDisk
+        if pol == 1:
+            diff = self.uvRcp - uvDisk
+        return srh_utils.complex_to_real(diff[self.uvUniform!=0])
+    
     def findDisk_stair(self):
-        Tb = self.ZirinQSunTb.getTbAtFrequency(self.freqList[self.frequencyChannel]*1e-6) * 1e3
         self.createDiskLmFft(980)
         self.createUvUniform()
-        self.x_ini = [Tb/self.convolutionNormCoef,0,0,0]
-        ls_res = least_squares(self.diskDiff_stair, self.x_ini, args = (0,), ftol=self.centering_ftol)
-        _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _nsLcpStair = ls_res['x']
-        ls_res = least_squares(self.diskDiff_stair, self.x_ini, args = (1,), ftol=self.centering_ftol)
-        _diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _nsRcpStair = ls_res['x']
+        if self.flux_calibrated:
+            Tb = self.ZirinQSunTb.getTbAtFrequency(self.freqList[self.frequencyChannel]*1e-6) * 1e3
+            x_ini = [0,0,0]
+            ls_res = least_squares(self.diskDiff_stair_fluxNorm, x_ini, args = (0,Tb/self.convolutionNormCoef), ftol=self.centering_ftol)
+            # self.centeringResultLcp[self.frequencyChannel] = ls_res['x']
+            _ewSlopeLcp, _nsSlopeLcp, _nsLcpStair = ls_res['x']
+            ls_res = least_squares(self.diskDiff_stair_fluxNorm, x_ini, args = (1,Tb/self.convolutionNormCoef), ftol=self.centering_ftol)
+            _ewSlopeRcp, _nsSlopeRcp, _nsRcpStair = ls_res['x']
+            # self.centeringResultRcp[self.frequencyChannel] = ls_res['x']
+            
+            self.diskLevelLcp[self.frequencyChannel] = Tb/self.convolutionNormCoef
+            self.diskLevelRcp[self.frequencyChannel] = Tb/self.convolutionNormCoef
         
-        if _diskLevelLcp<0:
-            _nsLcpStair += 180
-            _diskLevelLcp *= -1
-        if _diskLevelRcp<0:
-            _nsRcpStair += 180
-            _diskLevelRcp *= -1
+        else:
+            Tb = self.ZirinQSunTb.getTbAtFrequency(self.freqList[self.frequencyChannel]*1e-6) * 1e3
+            x_ini = [Tb/self.convolutionNormCoef,0,0,0]
+            
+            ls_res = least_squares(self.diskDiff_stair, x_ini, args = (0,), ftol=self.centering_ftol)
+            # self.centeringResultLcp[self.frequencyChannel] = ls_res['x']
+            _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _nsLcpStair = ls_res['x']
+            ls_res = least_squares(self.diskDiff_stair, x_ini, args = (1,), ftol=self.centering_ftol)
+            _diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _nsRcpStair = ls_res['x']
+            # self.centeringResultRcp[self.frequencyChannel] = ls_res['x']
+            
+            if _diskLevelLcp<0:
+                _nsLcpStair += 180
+                _diskLevelLcp *= -1
+            if _diskLevelRcp<0:
+                _nsRcpStair += 180
+                _diskLevelRcp *= -1
+            
+            self.diskLevelLcp[self.frequencyChannel] = _diskLevelLcp
+            self.diskLevelRcp[self.frequencyChannel] = _diskLevelRcp
+            self.ewAntAmpLcp[self.frequencyChannel][self.ewAntAmpLcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelLcp*self.convolutionNormCoef / Tb)
+            self.nsAntAmpLcp[self.frequencyChannel][self.nsAntAmpLcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelLcp*self.convolutionNormCoef / Tb)
+            self.ewAntAmpRcp[self.frequencyChannel][self.ewAntAmpRcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelRcp*self.convolutionNormCoef / Tb)
+            self.nsAntAmpRcp[self.frequencyChannel][self.nsAntAmpRcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelRcp*self.convolutionNormCoef / Tb)
         
-        self.diskLevelLcp[self.frequencyChannel] = _diskLevelLcp
-        self.diskLevelRcp[self.frequencyChannel] = _diskLevelRcp
 
         self.ewSlopeLcp[self.frequencyChannel] = srh_utils.wrap(self.ewSlopeLcp[self.frequencyChannel] + _ewSlopeLcp)
         self.nsSlopeLcp[self.frequencyChannel] = srh_utils.wrap(self.nsSlopeLcp[self.frequencyChannel] + _nsSlopeLcp)

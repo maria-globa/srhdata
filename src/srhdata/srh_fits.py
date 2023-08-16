@@ -35,6 +35,8 @@ class SrhFitsFile():
         self.ZirinQSunTb = ZirinTb()
         self.convolutionNormCoef = 1
         self.useRLDif = False
+        self.flux_calibrated = False
+        self.corr_amp_exist = False
         
         # self.open(name)
                    
@@ -77,6 +79,7 @@ class SrhFitsFile():
                 self.ampRcp_c = NP.reshape(self.hduList[1].data['amp_c_rcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
                 # self.ampLcp_c = self.ampLcp_c.astype(float) / ampScale
                 # self.ampRcp_c = self.ampRcp_c.astype(float) / ampScale
+                self.corr_amp_exist = True
             except:
                 pass
             

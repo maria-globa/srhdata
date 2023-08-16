@@ -36,7 +36,8 @@ class SrhFitsFile0306(SrhFitsFile):
         self.rcpShift = NP.ones(self.freqListLength)
         self.convolutionNormCoef = 44.8
         self.out_filenames = []
-        self.normalizeFlux()
+        if self.corr_amp_exist:
+            self.normalizeFlux()
         
     def normalizeFlux(self):
         file = Path(__file__).resolve()
@@ -93,6 +94,8 @@ class SrhFitsFile0306(SrhFitsFile):
             
             self.visLcp[ff,:,:] *= 2 # flux is divided by 2 for R and L
             self.visRcp[ff,:,:] *= 2
+            
+        self.flux_calibrated = True
             
     def beam(self):
         self.setFrequencyChannel(0)
@@ -494,6 +497,12 @@ class SrhFitsFile0306(SrhFitsFile):
 
         self.lcpShift[self.frequencyChannel] = self.lcpShift[self.frequencyChannel]/(_shiftLcp * self.convolutionNormCoef / Tb)
         self.rcpShift[self.frequencyChannel] = self.rcpShift[self.frequencyChannel]/(_shiftRcp * self.convolutionNormCoef / Tb)
+
+        if not self.corr_amp_exist:
+            self.ewAntAmpLcp[self.frequencyChannel][self.ewAntAmpLcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelLcp*self.convolutionNormCoef / Tb)
+            self.nsAntAmpLcp[self.frequencyChannel][self.nsAntAmpLcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelLcp*self.convolutionNormCoef / Tb)
+            self.ewAntAmpRcp[self.frequencyChannel][self.ewAntAmpRcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelRcp*self.convolutionNormCoef / Tb)
+            self.nsAntAmpRcp[self.frequencyChannel][self.nsAntAmpRcp[self.frequencyChannel]!=1e6] *= NP.sqrt(_diskLevelRcp*self.convolutionNormCoef / Tb)
 
         self.ewSlopeLcp[self.frequencyChannel] = srh_utils.wrap(self.ewSlopeLcp[self.frequencyChannel] + _ewSlopeLcp)
         self.nsSlopeLcp[self.frequencyChannel] = srh_utils.wrap(self.nsSlopeLcp[self.frequencyChannel] + _nsSlopeLcp)
