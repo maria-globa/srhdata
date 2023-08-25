@@ -180,11 +180,14 @@ class SrhFitsFile0306(SrhFitsFile):
         antBGainsEW = NP.zeros(ewNum, dtype = complex)
         ewSolVis = NP.zeros(self.baselines, dtype = complex)
         nsSolVis = NP.zeros(self.baselines, dtype = complex)
+        solVis = NP.zeros_like(redundantVisAll, dtype = complex)
+        antAGains = NP.zeros_like(redundantVisAll, dtype = complex)
+        antBGains = NP.zeros_like(redundantVisAll, dtype = complex)
         
         args = (redundantVisAll, freqChannel,
                 res, ewSolarAmp, nsAntNumber_c, nsGainsNumber, ewGainsNumber, nsSolVisNumber, 
                 ewSolVisNumber, nsNum, ewNum, solVisArrayNS, antAGainsNS, antBGainsNS, solVisArrayEW, 
-                antAGainsEW, antBGainsEW, ewSolVis, nsSolVis)
+                antAGainsEW, antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains)
 
         ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_lcp[freqChannel], args = args, max_nfev = 400)
         self.calibrationResultLcp[freqChannel] = ls_res['x']
@@ -238,11 +241,14 @@ class SrhFitsFile0306(SrhFitsFile):
         antBGainsEW = NP.zeros(ewNum, dtype = complex)
         ewSolVis = NP.zeros(self.baselines, dtype = complex)
         nsSolVis = NP.zeros(self.baselines, dtype = complex)
+        solVis = NP.zeros_like(redundantVisAll, dtype = complex)
+        antAGains = NP.zeros_like(redundantVisAll, dtype = complex)
+        antBGains = NP.zeros_like(redundantVisAll, dtype = complex)
         
         args = (redundantVisAll, freqChannel,
                 res, ewSolarAmp, nsAntNumber_c, nsGainsNumber, ewGainsNumber, nsSolVisNumber, 
                 ewSolVisNumber, nsNum, ewNum, solVisArrayNS, antAGainsNS, antBGainsNS, solVisArrayEW, 
-                antAGainsEW, antBGainsEW, ewSolVis, nsSolVis)
+                antAGainsEW, antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains)
         
         ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_rcp[freqChannel], args = args, max_nfev = 400)
         self.calibrationResultRcp[freqChannel] = ls_res['x']
@@ -261,7 +267,7 @@ class SrhFitsFile0306(SrhFitsFile):
     def allGainsFunc_constrained(self, x, obsVis, freq,
                                  res, ewSolarAmp, nsAntNumber_c, nsGainsNumber, ewGainsNumber, nsSolVisNumber, 
                                  ewSolVisNumber, nsNum, ewNum, solVisArrayNS, antAGainsNS, antBGainsNS, solVisArrayEW, 
-                                 antAGainsEW, antBGainsEW, ewSolVis, nsSolVis):
+                                 antAGainsEW, antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains):
 
         nsSolarAmp = NP.abs(x[0])
         x_complex = srh_utils.real_to_complex(x[1:])
@@ -287,7 +293,15 @@ class SrhFitsFile0306(SrhFitsFile):
             antBGainsEW[prev_ind_ew:prev_ind_ew+self.antNumberEW-baseline] = ewGains[baseline:]
             prev_ind_ew = prev_ind_ew+self.antNumberEW-baseline
             
-        res = NP.append(solVisArrayEW, solVisArrayNS) * NP.append(antAGainsEW, antAGainsNS) * NP.conj(NP.append(antBGainsEW, antBGainsNS)) - obsVis
+        # res = NP.append(solVisArrayEW, solVisArrayNS) * NP.append(antAGainsEW, antAGainsNS) * NP.conj(NP.append(antBGainsEW, antBGainsNS)) - obsVis
+        solVis[:len(solVisArrayEW)] = solVisArrayEW
+        solVis[len(solVisArrayEW):] = solVisArrayNS
+        antAGains[:len(antAGainsEW)] = antAGainsEW
+        antAGains[len(antAGainsEW):] = antAGainsNS
+        antBGains[:len(antBGainsEW)] = antBGainsEW
+        antBGains[len(antBGainsEW):] = antBGainsNS
+            
+        res = solVis * antAGains * NP.conj(antBGains) - obsVis
         return srh_utils.complex_to_real(res)  
     
     def buildEWPhase(self):
