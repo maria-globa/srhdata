@@ -163,8 +163,11 @@ class SrhFitsFile0306(SrhFitsFile):
             redundantVisEW = self.visLcp[freqChannel, self.calibIndex, redIndexesEW]
             redundantVisAll = NP.append(redundantVisEW, redundantVisNS)
             
+        ewAmpSign = 1 if self.ewSolarPhase[freqChannel]==0 else -1
+        nsAmpSign = 1 if self.nsSolarPhase[freqChannel]==0 else -1
+        
         res = NP.zeros_like(redundantVisAll, dtype = complex)
-        ewSolarAmp = 1
+        ewSolarAmp = 1 * ewAmpSign
         nsAntNumber_c = self.antNumberNS + 1
         nsGainsNumber = self.antNumberNS
         ewGainsNumber = self.antNumberEW
@@ -187,7 +190,7 @@ class SrhFitsFile0306(SrhFitsFile):
         args = (redundantVisAll, freqChannel,
                 res, ewSolarAmp, nsAntNumber_c, nsGainsNumber, ewGainsNumber, nsSolVisNumber, 
                 ewSolVisNumber, nsNum, ewNum, solVisArrayNS, antAGainsNS, antBGainsNS, solVisArrayEW, 
-                antAGainsEW, antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains)
+                antAGainsEW, antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains, nsAmpSign)
 
         ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_lcp[freqChannel], args = args, max_nfev = 400)
         self.calibrationResultLcp[freqChannel] = ls_res['x']
@@ -224,8 +227,11 @@ class SrhFitsFile0306(SrhFitsFile):
             redundantVisEW = self.visRcp[freqChannel, self.calibIndex, redIndexesEW]
             redundantVisAll = NP.append(redundantVisEW, redundantVisNS)
             
+        ewAmpSign = 1 if self.ewSolarPhase[freqChannel]==0 else -1
+        nsAmpSign = 1 if self.nsSolarPhase[freqChannel]==0 else -1
+        
         res = NP.zeros_like(redundantVisAll, dtype = complex)
-        ewSolarAmp = 1
+        ewSolarAmp = 1 * ewAmpSign
         nsAntNumber_c = self.antNumberNS + 1
         nsGainsNumber = self.antNumberNS
         ewGainsNumber = self.antNumberEW
@@ -248,7 +254,7 @@ class SrhFitsFile0306(SrhFitsFile):
         args = (redundantVisAll, freqChannel,
                 res, ewSolarAmp, nsAntNumber_c, nsGainsNumber, ewGainsNumber, nsSolVisNumber, 
                 ewSolVisNumber, nsNum, ewNum, solVisArrayNS, antAGainsNS, antBGainsNS, solVisArrayEW, 
-                antAGainsEW, antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains)
+                antAGainsEW, antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains, nsAmpSign)
         
         ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_rcp[freqChannel], args = args, max_nfev = 400)
         self.calibrationResultRcp[freqChannel] = ls_res['x']
@@ -267,15 +273,15 @@ class SrhFitsFile0306(SrhFitsFile):
     def allGainsFunc_constrained(self, x, obsVis, freq,
                                  res, ewSolarAmp, nsAntNumber_c, nsGainsNumber, ewGainsNumber, nsSolVisNumber, 
                                  ewSolVisNumber, nsNum, ewNum, solVisArrayNS, antAGainsNS, antBGainsNS, solVisArrayEW, 
-                                 antAGainsEW, antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains):
+                                 antAGainsEW, antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains, nsAmpSign):
 
-        nsSolarAmp = NP.abs(x[0])
+        nsSolarAmp = NP.abs(x[0]) * nsAmpSign
         x_complex = srh_utils.real_to_complex(x[1:])
 
-        nsSolVisNumber = self.baselines - 1
-        ewSolVisNumber = self.baselines - 1
-        ewSolVis = NP.append((ewSolarAmp * NP.exp(1j*self.ewSolarPhase[freq])), x_complex[: ewSolVisNumber])
-        nsSolVis = NP.append((nsSolarAmp * NP.exp(1j*self.nsSolarPhase[freq])), x_complex[ewSolVisNumber : ewSolVisNumber+nsSolVisNumber])
+        ewSolVis[0] = ewSolarAmp
+        ewSolVis[1:] = x_complex[: ewSolVisNumber]
+        nsSolVis[0] = nsSolarAmp
+        nsSolVis[1:] = x_complex[ewSolVisNumber : ewSolVisNumber+nsSolVisNumber]
         
         ewGains = x_complex[ewSolVisNumber+nsSolVisNumber : ewSolVisNumber+nsSolVisNumber+ewGainsNumber]
         nsGains = NP.append(ewGains[32], x_complex[ewSolVisNumber+nsSolVisNumber+ewGainsNumber :])
@@ -293,7 +299,6 @@ class SrhFitsFile0306(SrhFitsFile):
             antBGainsEW[prev_ind_ew:prev_ind_ew+self.antNumberEW-baseline] = ewGains[baseline:]
             prev_ind_ew = prev_ind_ew+self.antNumberEW-baseline
             
-        # res = NP.append(solVisArrayEW, solVisArrayNS) * NP.append(antAGainsEW, antAGainsNS) * NP.conj(NP.append(antBGainsEW, antBGainsNS)) - obsVis
         solVis[:len(solVisArrayEW)] = solVisArrayEW
         solVis[len(solVisArrayEW):] = solVisArrayNS
         antAGains[:len(antAGainsEW)] = antAGainsEW
