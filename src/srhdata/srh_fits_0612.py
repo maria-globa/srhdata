@@ -165,9 +165,10 @@ class SrhFitsFile0612(SrhFitsFile):
         self.ns_gains_lcp = gains[self.antNumberEW:]
         self.nsAntPhaLcp[freqChannel] = NP.angle(self.ns_gains_lcp)
         
-        norm = NP.mean(NP.abs(gains[NP.abs(gains)>NP.median(NP.abs(gains))*0.6]))
+        norm = NP.mean(NP.abs(self.ew_gains_lcp[NP.abs(self.ew_gains_lcp)>NP.median(NP.abs(self.ew_gains_lcp))*0.6]))
         self.ewAntAmpLcp[freqChannel] = NP.abs(self.ew_gains_lcp)/norm
         self.ewAntAmpLcp[freqChannel][self.ewAntAmpLcp[freqChannel]<NP.median(self.ewAntAmpLcp[freqChannel])*0.5] = 1e6
+        norm = NP.mean(NP.abs(self.ns_gains_lcp[NP.abs(self.ns_gains_lcp)>NP.median(NP.abs(self.ns_gains_lcp))*0.6]))
         self.nsAntAmpLcp[freqChannel] = NP.abs(self.ns_gains_lcp)/norm
         self.nsAntAmpLcp[freqChannel][self.nsAntAmpLcp[freqChannel]<NP.median(self.nsAntAmpLcp[freqChannel])*0.5] = 1e6
         
@@ -206,9 +207,10 @@ class SrhFitsFile0612(SrhFitsFile):
         self.ns_gains_rcp = gains[self.antNumberEW:]
         self.nsAntPhaRcp[freqChannel] = NP.angle(self.ns_gains_rcp)
         
-        norm = NP.mean(NP.abs(gains[NP.abs(gains)>NP.median(NP.abs(gains))*0.6]))
+        norm = NP.mean(NP.abs(self.ew_gains_rcp[NP.abs(self.ew_gains_rcp)>NP.median(NP.abs(self.ew_gains_rcp))*0.6]))
         self.ewAntAmpRcp[freqChannel] = NP.abs(self.ew_gains_rcp)/norm
         self.ewAntAmpRcp[freqChannel][self.ewAntAmpRcp[freqChannel]<NP.median(self.ewAntAmpRcp[freqChannel])*0.5] = 1e6
+        norm = NP.mean(NP.abs(self.ns_gains_rcp[NP.abs(self.ns_gains_rcp)>NP.median(NP.abs(self.ns_gains_rcp))*0.6]))
         self.nsAntAmpRcp[freqChannel] = NP.abs(self.ns_gains_rcp)/norm
         self.nsAntAmpRcp[freqChannel][self.nsAntAmpRcp[freqChannel]<NP.median(self.nsAntAmpRcp[freqChannel])*0.5] = 1e6
     

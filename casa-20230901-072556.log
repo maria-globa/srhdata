@@ -1,0 +1,9 @@
+2023-09-01 07:25:59	INFO	::casa	
+2023-09-01 07:25:59	INFO	::casa	CASA Version  5.7.2-4  
+2023-09-01 07:26:03	INFO	viewer::::	
+2023-09-01 07:26:03	INFO	viewer::::+	##########################################
+2023-09-01 07:26:03	INFO	viewer::::+	##### Begin Task: viewer             #####
+2023-09-01 07:26:03	INFO	viewer::::	viewer(infile="",displaytype="raster",channel=0,zoom=1,outfile="",
+2023-09-01 07:26:03	INFO	viewer::::+	        outscale=1.0,outdpi=300,outformat="jpg",outlandscape=False,gui=True)
+2023-09-01 07:26:04	INFO	viewer::::	##### End Task: viewer               #####
+2023-09-01 07:26:04	INFO	viewer::::+	##########################################
