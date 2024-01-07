@@ -45,7 +45,7 @@ class SrhFitsFile():
         
         if self.filenames[0]:
             try:
-                self.hduList = fits.open(self.filename)
+                self.hduList = fits.open(self.filenames[0])
                 self.isOpen = True
                 self.dateObs = self.hduList[0].header['DATE-OBS'] + 'T' + self.hduList[0].header['TIME-OBS']
                 self.antennaNumbers = self.hduList[2].data['ant_index']
