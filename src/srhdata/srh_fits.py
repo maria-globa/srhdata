@@ -16,8 +16,10 @@ from casatasks import importuvfits
 
 class SrhFitsFile():
     def __init__(self, filenames):
-        if type(filenames) is not list: self.filenames = [filenames]
-        self.filenames = filenames
+        if type(filenames) is not list:
+            self.filenames = [filenames]
+        else:
+            self.filenames = filenames
         
         self.isOpen = False;
         self.calibIndex = 0;
