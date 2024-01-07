@@ -49,23 +49,12 @@ class SrhFitsFile0612(SrhFitsFile):
 
         fluxNormFits = fits.open(parent + '/srh_0612_cp_fluxNorm.fits')
         fluxNormI = fluxNormFits[2].data['fluxNormI']
-        
-        # max_amp = float(self.hduList[0].header['VIS_MAX']) / 128.
-        
-        self.lcpSigmaCSrc = NP.sqrt(self.ampLcp_c)# * max_amp)
-        self.rcpSigmaCSrc = NP.sqrt(self.ampRcp_c)# * max_amp)
-        
-        self.rcpSigmaCSrc[self.rcpSigmaCSrc < 1000] = 1e6
-        self.lcpSigmaCSrc[self.lcpSigmaCSrc < 1000] = 1e6
-        
-        for vis in range(18336):
-            AB = self.visIndex2antIndex(vis)
-            self.visLcp[:,:,vis] = self.visLcp[:,:,vis] / (self.lcpSigmaCSrc[:,:,AB[0]] * self.lcpSigmaCSrc[:,:,AB[1]])
-            self.visRcp[:,:,vis] = self.visRcp[:,:,vis] / (self.rcpSigmaCSrc[:,:,AB[0]] * self.rcpSigmaCSrc[:,:,AB[1]])
+
+        self.visLcp = self.visLcp / ((NP.sqrt(self.ampLcp_c[:,:,self.antennaA] * self.ampLcp_c[:,:,self.antennaB])))
+        self.visRcp = self.visRcp / ((NP.sqrt(self.ampRcp_c[:,:,self.antennaA] * self.ampRcp_c[:,:,self.antennaB])))
     
         ampFluxRcp = NP.mean(self.ampRcp, axis = 2)
         ampFluxLcp = NP.mean(self.ampLcp, axis = 2)
-
             
         self.tempRcp = NP.zeros(self.freqListLength)
         self.tempLcp = NP.zeros(self.freqListLength)
@@ -263,14 +252,18 @@ class SrhFitsFile0612(SrhFitsFile):
             for i in range(antNumberEW - baseline):
                 redIndexesEW.append(NP.where((self.antennaA==i) & (self.antennaB==i+baseline))[0][0])
              
+        validScansBoth = NP.intersect1d(NP.where(self.validScansLcp[freqChannel]), NP.where(self.validScansRcp[freqChannel]))
+        ind = NP.argmin(NP.abs(validScansBoth - self.calibIndex))
+        calibIndex = validScansBoth[ind]      
+             
         if self.averageCalib:
-            redundantVisNS = NP.mean(self.visLcp[freqChannel, :20, redIndexesNS], axis = 1)
-            redundantVisEW = NP.mean(self.visLcp[freqChannel, :20, redIndexesEW], axis = 1)
+            redundantVisNS = NP.sum(self.visLcp[freqChannel, :20, redIndexesNS], axis = 1)/NP.sum(self.validScansLcp[freqChannel])
+            redundantVisEW = NP.sum(self.visLcp[freqChannel, :20, redIndexesEW], axis = 1)/NP.sum(self.validScansLcp[freqChannel])
             crossVis = NP.mean(self.visLcp[freqChannel, :20, 63],)
         else:
-            redundantVisNS = self.visLcp[freqChannel, self.calibIndex, redIndexesNS]
-            redundantVisEW = self.visLcp[freqChannel, self.calibIndex, redIndexesEW]
-            crossVis = self.visLcp[freqChannel, self.calibIndex, 63]
+            redundantVisNS = self.visLcp[freqChannel, calibIndex, redIndexesNS]
+            redundantVisEW = self.visLcp[freqChannel, calibIndex, redIndexesEW]
+            crossVis = self.visLcp[freqChannel, calibIndex, 63]
             
         for i in range(len(redIndexesNS)):    
             if NP.any(self.flags_ns == self.antennaA[redIndexesNS[i]]) or NP.any(self.flags_ns == self.antennaB[redIndexesNS[i]]):
@@ -337,15 +330,19 @@ class SrhFitsFile0612(SrhFitsFile):
         for baseline in range(1, baselinesNumber+1):
             for i in range(antNumberEW - baseline):
                 redIndexesEW.append(NP.where((self.antennaA==i) & (self.antennaB==i+baseline))[0][0])
-             
+
+        validScansBoth = NP.intersect1d(NP.where(self.validScansLcp[freqChannel]), NP.where(self.validScansRcp[freqChannel]))
+        ind = NP.argmin(NP.abs(validScansBoth - self.calibIndex))
+        calibIndex = validScansBoth[ind]
+
         if self.averageCalib:
-            redundantVisNS = NP.mean(self.visRcp[freqChannel, :20, redIndexesNS], axis = 1)
-            redundantVisEW = NP.mean(self.visRcp[freqChannel, :20, redIndexesEW], axis = 1)
+            redundantVisNS = NP.sum(self.visRcp[freqChannel, :20, redIndexesNS], axis = 1)/NP.sum(self.validScansRcp[freqChannel])
+            redundantVisEW = NP.sum(self.visRcp[freqChannel, :20, redIndexesEW], axis = 1)/NP.sum(self.validScansRcp[freqChannel])
             crossVis = NP.mean(self.visRcp[freqChannel, :20, 63],)
         else:
-            redundantVisNS = self.visRcp[freqChannel, self.calibIndex, redIndexesNS]
-            redundantVisEW = self.visRcp[freqChannel, self.calibIndex, redIndexesEW]
-            crossVis = self.visRcp[freqChannel, self.calibIndex, 63]
+            redundantVisNS = self.visRcp[freqChannel, calibIndex, redIndexesNS]
+            redundantVisEW = self.visRcp[freqChannel, calibIndex, redIndexesEW]
+            crossVis = self.visRcp[freqChannel, calibIndex, 63]
             
         for i in range(len(redIndexesNS)):    
             if NP.any(self.flags_ns == self.antennaA[redIndexesNS[i]]) or NP.any(self.flags_ns == self.antennaB[redIndexesNS[i]]):
@@ -500,8 +497,8 @@ class SrhFitsFile0612(SrhFitsFile):
             for i in range(self.antNumberNS):
                 for j in range(self.antNumberEW):
                     if not (NP.any(flags_ew == j) or NP.any(flags_ns == i)):
-                        self.uvLcp[O + i*2, O + (j-64)*2] = NP.mean(self.visLcp[self.frequencyChannel, firstScan:lastScan, i*128+j])
-                        self.uvRcp[O + i*2, O + (j-64)*2] = NP.mean(self.visRcp[self.frequencyChannel, firstScan:lastScan, i*128+j])
+                        self.uvLcp[O + i*2, O + (j-64)*2] = NP.sum(self.visLcp[self.frequencyChannel, firstScan:lastScan, i*128+j])/NP.sum(self.validScansLcp[self.frequencyChannel][firstScan:lastScan])
+                        self.uvRcp[O + i*2, O + (j-64)*2] = NP.sum(self.visRcp[self.frequencyChannel, firstScan:lastScan, i*128+j])/NP.sum(self.validScansRcp[self.frequencyChannel][firstScan:lastScan])
                         if (phaseCorrect):
                             ewPh = self.ewAntPhaLcp[self.frequencyChannel, j]+self.ewLcpPhaseCorrection[self.frequencyChannel, j]
                             nsPh = self.nsAntPhaLcp[self.frequencyChannel, i]+self.nsLcpPhaseCorrection[self.frequencyChannel, i]

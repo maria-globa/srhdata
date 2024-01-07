@@ -15,8 +15,9 @@ from casatasks import importuvfits
 
 
 class SrhFitsFile():
-    def __init__(self, name):
-        self.filename = name
+    def __init__(self, filenames):
+        if type(filenames) is not list: self.filenames = [filenames]
+        self.filenames = filenames
         
         self.isOpen = False;
         self.calibIndex = 0;
@@ -41,99 +42,122 @@ class SrhFitsFile():
         # self.open(name)
                    
     def open(self):
-        try:
-            self.hduList = fits.open(self.filename)
-            self.isOpen = True
-            self.dateObs = self.hduList[0].header['DATE-OBS'] + 'T' + self.hduList[0].header['TIME-OBS']
-            self.antennaNumbers = self.hduList[2].data['ant_index']
-            self.antennaNumbers = NP.reshape(self.antennaNumbers,self.antennaNumbers.size)
-            self.antennaNames = self.hduList[2].data['ant_name']
-            self.antennaNames = NP.reshape(self.antennaNames,self.antennaNames.size)
-            self.antennaA = self.hduList[4].data['ant_A']
-            self.antennaA = NP.reshape(self.antennaA,self.antennaA.size)
-            self.antennaB = self.hduList[4].data['ant_B']
-            self.antennaB = NP.reshape(self.antennaB,self.antennaB.size)
-            self.antX = self.hduList[3].data['ant_X']
-            self.antY = self.hduList[3].data['ant_Y']
-            self.freqList = self.hduList[1].data['frequency'];
-            self.freqListLength = self.freqList.size;
-            self.dataLength = self.hduList[1].data['time'].size // self.freqListLength;
-            self.freqTime = self.hduList[1].data['time']
+        
+        if self.filenames[0]:
             try:
-                self.freqTimeLcp = self.hduList[1].data['time_lcp']
-                self.freqTimeRcp = self.hduList[1].data['time_rcp']
-            except:
-                pass
-            self.visListLength = self.hduList[1].data['vis_lcp'].size // self.freqListLength // self.dataLength;
-            self.visLcp = NP.reshape(self.hduList[1].data['vis_lcp'],(self.freqListLength,self.dataLength,self.visListLength));
-            self.visRcp = NP.reshape(self.hduList[1].data['vis_rcp'],(self.freqListLength,self.dataLength,self.visListLength));
-            # self.visLcp /= float(self.hduList[0].header['VIS_MAX'])
-            # self.visRcp /= float(self.hduList[0].header['VIS_MAX'])
-            self.ampLcp = NP.reshape(self.hduList[1].data['amp_lcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
-            self.ampRcp = NP.reshape(self.hduList[1].data['amp_rcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
-            ampScale = float(self.hduList[0].header['VIS_MAX']) / 128.
-            self.ampLcp = self.ampLcp.astype(float) / ampScale
-            self.ampRcp = self.ampRcp.astype(float) / ampScale
-            try:
-                self.ampLcp_c = NP.reshape(self.hduList[1].data['amp_c_lcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
-                self.ampRcp_c = NP.reshape(self.hduList[1].data['amp_c_rcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
-                # self.ampLcp_c = self.ampLcp_c.astype(float) / ampScale
-                # self.ampRcp_c = self.ampRcp_c.astype(float) / ampScale
-                self.corr_amp_exist = True
-            except:
-                pass
-            
-            self.RAO = RAOcoords(self.dateObs.split('T')[0], self.base, observedObject = self.obsObject)
-            self.RAO.getHourAngle(self.freqTime[0,0])
-            
-            self.ewAntPhaLcp = NP.zeros((self.freqListLength, self.antNumberEW))
-            self.nsAntPhaLcp = NP.zeros((self.freqListLength, self.antNumberNS))
-            self.ewAntPhaRcp = NP.zeros((self.freqListLength, self.antNumberEW))
-            self.nsAntPhaRcp = NP.zeros((self.freqListLength, self.antNumberNS))
-            self.ewLcpPhaseCorrection = NP.zeros((self.freqListLength, self.antNumberEW))
-            self.ewRcpPhaseCorrection = NP.zeros((self.freqListLength, self.antNumberEW))
-            self.nsLcpPhaseCorrection = NP.zeros((self.freqListLength, self.antNumberNS))
-            self.nsRcpPhaseCorrection = NP.zeros((self.freqListLength, self.antNumberNS))
-            self.nsLcpStair = NP.zeros(self.freqListLength)
-            self.nsRcpStair = NP.zeros(self.freqListLength)
-            self.nsSolarPhase = NP.zeros(self.freqListLength)
-            self.ewSolarPhase = NP.zeros(self.freqListLength)
-            
-            self.ewAntAmpLcp = NP.ones((self.freqListLength, self.antNumberEW))
-            self.nsAntAmpLcp = NP.ones((self.freqListLength, self.antNumberNS))
-            self.ewAntAmpRcp = NP.ones((self.freqListLength, self.antNumberEW))
-            self.nsAntAmpRcp = NP.ones((self.freqListLength, self.antNumberNS))
-            
-            self.ewPhaseDif = NP.zeros_like(self.ewAntPhaLcp)
-            self.nsPhaseDif = NP.zeros_like(self.nsAntPhaLcp)
-            self.ewAmpDif = NP.zeros_like(self.ewAntAmpLcp)
-            self.nsAmpDif = NP.zeros_like(self.nsAntAmpLcp)
-            
-            self.nsLcpStair = NP.zeros(self.freqListLength)
-            self.nsRcpStair = NP.zeros(self.freqListLength)
-            self.ewSlopeLcp = NP.zeros(self.freqListLength)
-            self.nsSlopeLcp = NP.zeros(self.freqListLength)
-            self.ewSlopeRcp = NP.zeros(self.freqListLength)
-            self.nsSlopeRcp = NP.zeros(self.freqListLength)
-            self.diskLevelLcp = NP.ones(self.freqListLength)
-            self.diskLevelRcp = NP.ones(self.freqListLength)
-            self.lm_hd_relation = NP.ones(self.freqListLength)
-            self.lcpShift = NP.zeros(self.freqListLength)
-            self.rcpShift = NP.zeros(self.freqListLength)
-            
-            self.flags_ew = NP.array(())
-            self.flags_ns = NP.array(())
-            
-            x_size = (self.baselines-1)*2 + self.antNumberEW + self.antNumberNS
-            self.x_ini_lcp = NP.full((self.freqListLength, x_size*2+1), NP.concatenate((NP.ones(x_size+1), NP.zeros(x_size))))
-            self.x_ini_rcp = NP.full((self.freqListLength, x_size*2+1), NP.concatenate((NP.ones(x_size+1), NP.zeros(x_size))))
-            self.calibrationResultLcp = NP.zeros_like(self.x_ini_lcp)
-            self.calibrationResultRcp = NP.zeros_like(self.x_ini_rcp)
-            
-            self.beam_sr = NP.zeros(self.freqListLength)
-            
-        except FileNotFoundError:
-            print('File %s  not found'%self.filename);
+                self.hduList = fits.open(self.filename)
+                self.isOpen = True
+                self.dateObs = self.hduList[0].header['DATE-OBS'] + 'T' + self.hduList[0].header['TIME-OBS']
+                self.antennaNumbers = self.hduList[2].data['ant_index']
+                self.antennaNumbers = NP.reshape(self.antennaNumbers,self.antennaNumbers.size)
+                self.antennaNames = self.hduList[2].data['ant_name']
+                self.antennaNames = NP.reshape(self.antennaNames,self.antennaNames.size)
+                self.antennaA = self.hduList[4].data['ant_A']
+                self.antennaA = NP.reshape(self.antennaA,self.antennaA.size)
+                self.antennaB = self.hduList[4].data['ant_B']
+                self.antennaB = NP.reshape(self.antennaB,self.antennaB.size)
+                self.antX = self.hduList[3].data['ant_X']
+                self.antY = self.hduList[3].data['ant_Y']
+                self.freqList = self.hduList[1].data['frequency'];
+                self.freqListLength = self.freqList.size;
+                self.dataLength = self.hduList[1].data['time'].size // self.freqListLength;
+                self.freqTime = self.hduList[1].data['time']
+                self.validScansLcp = NP.ones((self.freqListLength,self.dataLength), dtype = bool)
+                self.validScansRcp = NP.ones((self.freqListLength,self.dataLength), dtype = bool)
+                try:
+                    self.freqTimeLcp = self.hduList[1].data['time_lcp']
+                    self.freqTimeRcp = self.hduList[1].data['time_rcp']
+                except:
+                    pass
+                self.visListLength = self.hduList[1].data['vis_lcp'].size // self.freqListLength // self.dataLength;
+                self.visLcp = NP.reshape(self.hduList[1].data['vis_lcp'],(self.freqListLength,self.dataLength,self.visListLength));
+                self.visRcp = NP.reshape(self.hduList[1].data['vis_rcp'],(self.freqListLength,self.dataLength,self.visListLength));
+                # self.visLcp /= float(self.hduList[0].header['VIS_MAX'])
+                # self.visRcp /= float(self.hduList[0].header['VIS_MAX'])
+                self.ampLcp = NP.reshape(self.hduList[1].data['amp_lcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
+                self.ampRcp = NP.reshape(self.hduList[1].data['amp_rcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
+                ampScale = float(self.hduList[0].header['VIS_MAX']) / 128.
+                self.ampLcp = self.ampLcp.astype(float) / ampScale
+                self.ampRcp = self.ampRcp.astype(float) / ampScale
+                try:
+                    self.correctSubpacketsNumber = int(self.hduList[0].header['SUBPACKS'])
+                    self.subpacketLcp = self.hduList[1].data['spacket_lcp']
+                    self.subpacketRcp = self.hduList[1].data['spacket_rcp']
+                    self.validScansLcp = self.subpacketLcp==self.correctSubpacketsNumber
+                    self.validScansRcp = self.subpacketRcp==self.correctSubpacketsNumber
+                    self.visLcp[~self.validScansLcp] = 0
+                    self.visRcp[~self.validScansRcp] = 0
+                    self.ampLcp[~self.validScansLcp] = 1
+                    self.ampRcp[~self.validScansRcp] = 1
+                    # self.calibIndex = NP.min(NP.intersect1d(NP.where(self.validScansLcp[0]), NP.where(self.validScansLcp[0]))) # frequencies?
+                except:
+                    pass
+                try:
+                    self.ampLcp_c = NP.reshape(self.hduList[1].data['amp_c_lcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
+                    self.ampRcp_c = NP.reshape(self.hduList[1].data['amp_c_rcp'],(self.freqListLength,self.dataLength,self.antennaNumbers.size));
+                    # self.ampLcp_c = self.ampLcp_c.astype(float) / ampScale
+                    # self.ampRcp_c = self.ampRcp_c.astype(float) / ampScale
+                    self.corr_amp_exist = True
+                    self.ampLcp_c[self.ampLcp_c <= 0.01] = 1e6
+                    self.ampRcp_c[self.ampRcp_c <= 0.01] = 1e6
+                except:
+                    pass
+                
+                self.RAO = RAOcoords(self.dateObs.split('T')[0], self.base, observedObject = self.obsObject)
+                self.RAO.getHourAngle(self.freqTime[0,0])
+                
+                self.ewAntPhaLcp = NP.zeros((self.freqListLength, self.antNumberEW))
+                self.nsAntPhaLcp = NP.zeros((self.freqListLength, self.antNumberNS))
+                self.ewAntPhaRcp = NP.zeros((self.freqListLength, self.antNumberEW))
+                self.nsAntPhaRcp = NP.zeros((self.freqListLength, self.antNumberNS))
+                self.ewLcpPhaseCorrection = NP.zeros((self.freqListLength, self.antNumberEW))
+                self.ewRcpPhaseCorrection = NP.zeros((self.freqListLength, self.antNumberEW))
+                self.nsLcpPhaseCorrection = NP.zeros((self.freqListLength, self.antNumberNS))
+                self.nsRcpPhaseCorrection = NP.zeros((self.freqListLength, self.antNumberNS))
+                self.nsLcpStair = NP.zeros(self.freqListLength)
+                self.nsRcpStair = NP.zeros(self.freqListLength)
+                self.nsSolarPhase = NP.zeros(self.freqListLength)
+                self.ewSolarPhase = NP.zeros(self.freqListLength)
+                
+                self.ewAntAmpLcp = NP.ones((self.freqListLength, self.antNumberEW))
+                self.nsAntAmpLcp = NP.ones((self.freqListLength, self.antNumberNS))
+                self.ewAntAmpRcp = NP.ones((self.freqListLength, self.antNumberEW))
+                self.nsAntAmpRcp = NP.ones((self.freqListLength, self.antNumberNS))
+                
+                self.ewPhaseDif = NP.zeros_like(self.ewAntPhaLcp)
+                self.nsPhaseDif = NP.zeros_like(self.nsAntPhaLcp)
+                self.ewAmpDif = NP.zeros_like(self.ewAntAmpLcp)
+                self.nsAmpDif = NP.zeros_like(self.nsAntAmpLcp)
+                
+                self.nsLcpStair = NP.zeros(self.freqListLength)
+                self.nsRcpStair = NP.zeros(self.freqListLength)
+                self.ewSlopeLcp = NP.zeros(self.freqListLength)
+                self.nsSlopeLcp = NP.zeros(self.freqListLength)
+                self.ewSlopeRcp = NP.zeros(self.freqListLength)
+                self.nsSlopeRcp = NP.zeros(self.freqListLength)
+                self.diskLevelLcp = NP.ones(self.freqListLength)
+                self.diskLevelRcp = NP.ones(self.freqListLength)
+                self.lm_hd_relation = NP.ones(self.freqListLength)
+                self.lcpShift = NP.zeros(self.freqListLength)
+                self.rcpShift = NP.zeros(self.freqListLength)
+                
+                self.flags_ew = NP.array(())
+                self.flags_ns = NP.array(())
+                
+                x_size = (self.baselines-1)*2 + self.antNumberEW + self.antNumberNS
+                self.x_ini_lcp = NP.full((self.freqListLength, x_size*2+1), NP.concatenate((NP.ones(x_size+1), NP.zeros(x_size))))
+                self.x_ini_rcp = NP.full((self.freqListLength, x_size*2+1), NP.concatenate((NP.ones(x_size+1), NP.zeros(x_size))))
+                self.calibrationResultLcp = NP.zeros_like(self.x_ini_lcp)
+                self.calibrationResultRcp = NP.zeros_like(self.x_ini_rcp)
+                
+                self.beam_sr = NP.zeros(self.freqListLength)
+                
+            except FileNotFoundError:
+                print('File %s  not found'%self.filenames);
+                
+        if len(self.filenames) > 1:
+            for filename in self.filenames[1:]:
+                self.append(filename)
     
     def append(self,name):
         try:
@@ -149,23 +173,46 @@ class SrhFitsFile():
             ampScale = float(self.hduList[0].header['VIS_MAX']) / 128.
             ampLcp = ampLcp.astype(float) / ampScale
             ampRcp = ampRcp.astype(float) / ampScale
-
-            self.freqTime = NP.concatenate((self.freqTime, freqTime), axis = 1)
-            self.visLcp = NP.concatenate((self.visLcp, visLcp), axis = 1)
-            self.visRcp = NP.concatenate((self.visRcp, visRcp), axis = 1)
-            self.ampLcp = NP.concatenate((self.ampLcp, ampLcp), axis = 1)
-            self.ampRcp = NP.concatenate((self.ampRcp, ampRcp), axis = 1)
-            
+            validScansLcp = NP.ones((self.freqListLength, dataLength), dtype = bool)
+            validScansRcp = NP.ones((self.freqListLength, dataLength), dtype = bool)
+            try:
+                subpacketLcp = self.hduList[1].data['spacket_lcp']
+                subpacketRcp = self.hduList[1].data['spacket_rcp']
+                self.subpacketLcp = NP.concatenate((self.subpacketLcp, subpacketLcp), axis = 1)
+                self.subpacketRcp = NP.concatenate((self.subpacketRcp, subpacketRcp), axis = 1)
+                validScansLcp = subpacketLcp==self.correctSubpacketsNumber
+                validScansRcp = subpacketRcp==self.correctSubpacketsNumber
+                visLcp[~validScansLcp] = 0
+                visRcp[~validScansRcp] = 0
+                ampLcp[~validScansLcp] = 1
+                ampRcp[~validScansRcp] = 1
+            except:
+                pass
+            try:
+                freqTimeLcp = hduList[1].data['time_lcp']
+                freqTimeRcp = hduList[1].data['time_rcp']
+                self.freqTimeLcp = NP.concatenate((self.freqTimeLcp, freqTimeLcp), axis = 1)
+                self.freqTimeRcp = NP.concatenate((self.freqTimeRcp, freqTimeRcp), axis = 1)
+            except:
+                pass
             try:
                 ampLcp_c = NP.reshape(hduList[1].data['amp_c_lcp'],(self.freqListLength,dataLength,self.antennaNumbers.size));
                 ampRcp_c = NP.reshape(hduList[1].data['amp_c_rcp'],(self.freqListLength,dataLength,self.antennaNumbers.size));
                 # ampLcp_c = ampLcp_c.astype(float) / ampScale
                 # ampRcp_c = ampRcp_c.astype(float) / ampScale
+                ampLcp_c[ampLcp_c <= 0.01] = 1e6
+                ampRcp_c[ampRcp_c <= 0.01] = 1e6
                 self.ampLcp_c = NP.concatenate((self.ampLcp_c, ampLcp_c), axis = 1)
                 self.ampRcp_c = NP.concatenate((self.ampRcp_c, ampRcp_c), axis = 1)
             except:
                 pass
-            
+            self.freqTime = NP.concatenate((self.freqTime, freqTime), axis = 1)
+            self.visLcp = NP.concatenate((self.visLcp, visLcp), axis = 1)
+            self.visRcp = NP.concatenate((self.visRcp, visRcp), axis = 1)
+            self.ampLcp = NP.concatenate((self.ampLcp, ampLcp), axis = 1)
+            self.ampRcp = NP.concatenate((self.ampRcp, ampRcp), axis = 1)
+            self.validScansLcp = NP.concatenate((self.validScansLcp, validScansLcp), axis = 1)
+            self.validScansRcp = NP.concatenate((self.validScansRcp, validScansRcp), axis = 1)
             self.dataLength += dataLength
             hduList.close()
 
