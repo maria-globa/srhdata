@@ -33,7 +33,6 @@ class SrhFitsFile():
         self.badAntsLcp = 0
         self.badAntsRcp = 0
         self.sizeOfUv = 1024
-        self.baselines = 5
         self.arcsecPerPixel = 4.91104/2
         self.ZirinQSunTb = ZirinTb()
         self.convolutionNormCoef = 1
@@ -50,7 +49,7 @@ class SrhFitsFile():
                 self.hduList = fits.open(self.filenames[0])
                 self.isOpen = True
                 self.dateObs = self.hduList[0].header['DATE-OBS'] + 'T' + self.hduList[0].header['TIME-OBS']
-                self.antennaNumbers = self.hduList[2].data['ant_index']
+                self.antennaNumbers = self.hduList[3].data['ant_index']
                 self.antennaNumbers = NP.reshape(self.antennaNumbers,self.antennaNumbers.size)
                 self.antennaNames = self.hduList[2].data['ant_name']
                 self.antennaNames = NP.reshape(self.antennaNames,self.antennaNames.size)
@@ -105,7 +104,7 @@ class SrhFitsFile():
                 except:
                     pass
                 
-                self.RAO = RAOcoords(self.dateObs.split('T')[0], self.base, observedObject = self.obsObject)
+                self.RAO = RAOcoords(self.dateObs.split('T')[0], self.base*1e-3, observedObject = self.obsObject)
                 self.RAO.getHourAngle(self.freqTime[0,0])
                 
                 self.ewAntPhaLcp = NP.zeros((self.freqListLength, self.antNumberEW))
@@ -152,7 +151,7 @@ class SrhFitsFile():
                 self.calibrationResultLcp = NP.zeros_like(self.x_ini_lcp)
                 self.calibrationResultRcp = NP.zeros_like(self.x_ini_rcp)
                 
-                self.beam_sr = NP.zeros(self.freqListLength)
+                self.beam_sr = NP.ones(self.freqListLength)
                 
             except FileNotFoundError:
                 print('File %s  not found'%self.filenames);

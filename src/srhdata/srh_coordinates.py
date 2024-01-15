@@ -65,6 +65,61 @@ def base2uvw0612(hourAngle, declination, antenna0, antenna1):
 
     return NP.dot(uvw_operator, NP.dot(phi_operator, base))
 
+
+def distFromCenter(ant):
+    ant += 1
+    if ant < 140:
+        n = NP.abs(ant - 70)
+        if n<25:
+            baseDist = n
+        else:
+            baseDist = 26
+            baseDist += (n-24)*2
+            if n>48:
+                baseDist += (n-48)*2
+        return baseDist * NP.sign(ant-70)
+    else:
+        n = ant - 139
+        if n<25:
+            baseDist = n
+        else:
+            baseDist = 24
+            baseDist += (n-24)*2
+            if n>48:
+                baseDist += (n-48)*2
+        return baseDist
+    
+
+def base2uvw1224(hourAngle, declination, antenna0, antenna1):
+    phi = 0.903338787600965
+    if ((antenna0 >= 0 and antenna0 <= 138) and (antenna1 >= 139 and antenna1 <= 207)):
+        base = NP.array([distFromCenter(antenna1), distFromCenter(antenna0), 0.])
+        
+    elif ((antenna1 >= 0 and antenna1 <= 138) and (antenna0 >= 139 and antenna0 <= 207)):
+        base = NP.array([distFromCenter(antenna0), distFromCenter(antenna1), 0.])
+        
+    elif ((antenna0 >= 0 and antenna0 <= 138) and (antenna1 >= 0 and antenna1 <= 138)):
+        base = NP.array([0.,distFromCenter(antenna0)-distFromCenter(antenna1),0.])
+        
+    elif ((antenna0 >= 139 and antenna0 <= 207) and (antenna1 >= 139 and antenna1 <= 207)):
+        base = NP.array([distFromCenter(antenna0)-distFromCenter(antenna1),0.,0.])
+    
+    base *= 2.45;
+    
+    phi_operator = NP.array([
+        [-NP.sin(phi), 0., NP.cos(phi)],
+        [0., 1., 0.],
+        [NP.cos(phi), 0., NP.sin(phi)]
+        ])
+
+    uvw_operator = NP.array([
+        [ NP.sin(hourAngle),		 NP.cos(hourAngle),		0.	  ],
+        [-NP.sin(declination)*NP.cos(hourAngle),  NP.sin(declination)*NP.sin(hourAngle), NP.cos(declination)], 
+        [ NP.cos(declination)*NP.cos(hourAngle), -NP.cos(declination)*NP.sin(hourAngle), NP.sin(declination)]  
+        ])
+
+    return NP.dot(uvw_operator, NP.dot(phi_operator, base))
+
 class RAOcoords():
     def __init__(self, theDate, base, observedObject = 'Sun'):
         self.base = base

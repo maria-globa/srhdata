@@ -26,10 +26,11 @@ from pathlib import Path
 class SrhFitsFile0306(SrhFitsFile):
     def __init__(self, name):
         super().__init__(name)
-        self.base = 9.8
+        self.base = 9800
         self.sizeOfUv = 1025
         self.antNumberEW = 97
         self.antNumberNS = 31
+        self.baselines = 5
         super().open()
         self.antZeroRow = self.hduList[3].data['ant_zero_row'][:97]
         self.lcpShift = NP.ones(self.freqListLength) # 0-frequency component in the spectrum

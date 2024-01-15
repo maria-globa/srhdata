@@ -24,10 +24,11 @@ from pathlib import Path
 class SrhFitsFile0612(SrhFitsFile):
     def __init__(self, name):
         super().__init__(name)
-        self.base = 4.9
+        self.base = 4900
         self.sizeOfUv = 1024
         self.antNumberEW = 128
         self.antNumberNS = 64
+        self.baselines = 5
         self.centering_ftol = 1e-14
         self.convolutionNormCoef = 18.7
         self.out_filenames = []
