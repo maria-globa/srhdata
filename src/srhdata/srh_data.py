@@ -8,6 +8,7 @@ Created on Thu Aug 18 13:57:36 2022
 
 from .srh_fits_0306 import SrhFitsFile0306
 from .srh_fits_0612 import SrhFitsFile0612
+from .srh_fits_1224 import SrhFitsFile1224
 from astropy.io import fits
 
 def same_array(files):
@@ -38,6 +39,11 @@ def open(files):
                     srh_obj.append(file)
         elif srh_array == 'SRH0612':
             srh_obj = SrhFitsFile0612(files[0])
+            if len(files) > 1:
+                for file in files[1:]:
+                    srh_obj.append(file)
+        elif srh_array == 'SRH1224':
+            srh_obj = SrhFitsFile1224(files[0])
             if len(files) > 1:
                 for file in files[1:]:
                     srh_obj.append(file)
