@@ -33,20 +33,11 @@ def open(files):
         f = fits.open(files[0])
         srh_array = f[0].header['INSTRUME']
         if srh_array == 'SRH0306':
-            srh_obj = SrhFitsFile0306(files[0])
-            if len(files) > 1:
-                for file in files[1:]:
-                    srh_obj.append(file)
+            srh_obj = SrhFitsFile0306(files)
         elif srh_array == 'SRH0612':
-            srh_obj = SrhFitsFile0612(files[0])
-            if len(files) > 1:
-                for file in files[1:]:
-                    srh_obj.append(file)
+            srh_obj = SrhFitsFile0612(files)
         elif srh_array == 'SRH1224':
-            srh_obj = SrhFitsFile1224(files[0])
-            if len(files) > 1:
-                for file in files[1:]:
-                    srh_obj.append(file)
+            srh_obj = SrhFitsFile1224(files)
         else:
             raise UnknownArray(srh_array)
     else:
