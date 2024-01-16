@@ -785,7 +785,7 @@ class SrhFitsFile1224(SrhFitsFile):
                stokes = stokes,
                **kwargs)
         
-    def makeMask(self, maskname = 'images/mask', cell = 2.45, imsize = 1024, threshold=100000, stokes = 'RRLL', **kwargs):
+    def makeMask(self, maskname = 'images/mask', cell = 2.45, imsize = 1024, threshold=60000, stokes = 'RRLL', **kwargs):
         freq_current = self.frequencyChannel
         self.setFrequencyChannel(0)
         if NP.count_nonzero(self.ewAntPhaLcp[0])==0:
@@ -862,7 +862,7 @@ class SrhFitsFile1224(SrhFitsFile):
         disk_model = scipy.signal.fftconvolve(disk,kern) / dL**2
         disk_model = disk_model[dL//2:dL//2+imsize,dL//2:dL//2+imsize]
         disk_model[disk_model<1e-10] = 0
-        disk_model = disk_model * diskTb * self.lm_hd_relation[self.frequencyChannel] / self.convolutionNormCoef# / 4
+        disk_model = disk_model * diskTb/1.3 * self.lm_hd_relation[self.frequencyChannel] / self.convolutionNormCoef# / 4
         ia_data[:,:,0,0] = disk_model
         ia_data[:,:,1,0] = disk_model
         ia.putchunk(pixels=ia_data)
@@ -964,7 +964,7 @@ class SrhFitsFile1224(SrhFitsFile):
             
         
         
-    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, compress_image = True, RL = False, clean_disk = True, calibrate = True, cell = 2.45, imsize = 1024, niter = 100000, threshold = 100000, stokes = 'RRLL', **kwargs):
+    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, compress_image = True, RL = False, clean_disk = True, calibrate = True, cell = 2.45, imsize = 1024, niter = 100000, threshold = 30000, stokes = 'RRLL', **kwargs):
         fitsTime = srh_utils.ihhmm_format(self.freqTime[frequency, scan])
         imagename = 'srh_%sT%s_%04d'%(self.hduList[0].header['DATE-OBS'].replace('-',''), fitsTime.replace(':',''), self.freqList[frequency]*1e-3 + .5)
         self.mask_name = os.path.join(path, 'srh_%sT%s_mask'%(self.hduList[0].header['DATE-OBS'], fitsTime))
