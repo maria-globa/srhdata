@@ -220,7 +220,7 @@ class SrhFitsFile():
         except FileNotFoundError:
             print('File %s  not found'%name);
             
-    def calibrate(self, freq = 'all', phaseCorrect = True, amplitudeCorrect = True, average = 0):
+    def calibrate(self, freq = 'all', phaseCorrect = True, amplitudeCorrect = True, average = 20):
         if freq == 'all':
             self.calculatePhaseCalibration()
             for freq in range(self.freqListLength):
