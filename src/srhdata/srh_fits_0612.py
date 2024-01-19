@@ -82,7 +82,7 @@ class SrhFitsFile0612(SrhFitsFile):
             
     def beam(self):
         self.setFrequencyChannel(0)
-        self.vis2uv(0, PSF = True)
+        self.vis2uv(0, average= 20, PSF = True)
         self.uv2lmImage()
         self.lm2Heliocentric(image_scale = 2)
         arcsecPerPix = self.arcsecPerPixel / 2.
