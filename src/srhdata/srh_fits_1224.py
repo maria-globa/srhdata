@@ -408,7 +408,7 @@ class SrhFitsFile1224(SrhFitsFile):
                             self.uvRcp[O + v*2, O + u*2] /= (ewAmpRcp[j] * nsAmpRcp[i])
                         self.uvLcp[O - v*2, O - u*2] = NP.conj(self.uvLcp[O + v*2, O + u*2])
                         self.uvRcp[O - v*2, O - u*2] = NP.conj(self.uvRcp[O + v*2, O + u*2])
-            for i in range(self.antNumberEW):
+            for i in range(len(self.antZeroRow)):
                 vis = self.antZeroRow[i]
                 if not (NP.any(flags_ew == i) or NP.any(flags_ew == self.center_ant)):
                     if i<self.center_ant:
