@@ -631,7 +631,7 @@ class SrhFitsFile0306(SrhFitsFile):
                stokes = stokes,
                **kwargs)
         
-    def makeMask(self, maskname = 'images/mask', cell = 2.45, imsize = 1024, threshold=100000, stokes = 'RRLL', **kwargs):
+    def makeMask(self, maskname = 'images/mask', cell = 2.45, imsize = 1024, threshold=40000, stokes = 'RRLL', **kwargs):
         freq_current = self.frequencyChannel
         self.setFrequencyChannel(0)
         if NP.count_nonzero(self.ewAntPhaLcp[0])==0:
