@@ -67,7 +67,6 @@ def base2uvw0612(hourAngle, declination, antenna0, antenna1):
 
 
 def distFromCenter(ant):
-    ant += 1
     if ant < 140:
         n = NP.abs(ant - 70)
         if n<25:
