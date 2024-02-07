@@ -869,7 +869,7 @@ class SrhFitsFile1224(SrhFitsFile):
         ia.unlock()
         ia.close()
         
-    def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, scan, compress_image, RL = False):
+    def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, scan, compress_image, RL = False, save_model = False):
         ia = IA()
         ia.open(casa_imagename + '.image')
         try:
@@ -962,9 +962,38 @@ class SrhFitsFile1224(SrhFitsFile):
             self.out_filenames.append(saveFitsIpath)
             self.out_filenames.append(saveFitsVpath)
             
+        if save_model:
+            ia.open(casa_imagename + '.model')
+            rcp_model = ia.getchunk()[:,:,0,0].transpose()
+            lcp_model = ia.getchunk()[:,:,1,0].transpose()
+            ia.close()
+
+            rcp_model = warp(rcp_model,(shift + (rotate + back_shift)).inverse)
+            lcp_model = warp(lcp_model,(shift + (rotate + back_shift)).inverse)
+       
+            if compress_image:
+                O = imsize//2
+                Q = imsize//4
+                scale = AffineTransform(scale=(0.5,0.5))
+                rcp_model = warp(rcp_model,(shift + (scale + back_shift)).inverse)[O-Q:O+Q,O-Q:O+Q]
+                lcp_model = warp(lcp_model,(shift + (scale + back_shift)).inverse)[O-Q:O+Q,O-Q:O+Q]
+            
+            saveFitsRCPhdu = fits.PrimaryHDU(header=pHeader, data=rcp_model.astype('float32'))
+            saveFitsRCPpath = fits_imagename + '_RCP_model.fit'
+            hduList = fits.HDUList([saveFitsRCPhdu, saveFitsIExtHdu])
+            hduList.writeto(saveFitsRCPpath, overwrite=True)
+            
+            saveFitsLCPhdu = fits.PrimaryHDU(header=pHeader, data=lcp_model.astype('float32'))
+            saveFitsLCPpath = fits_imagename + '_LCP_model.fit'
+            hduList = fits.HDUList(saveFitsLCPhdu)
+            hduList.writeto(saveFitsLCPpath, overwrite=True)
+            
+            self.out_filenames.append(saveFitsRCPpath)
+            self.out_filenames.append(saveFitsLCPpath)
+            
         
         
-    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, compress_image = True, RL = False, clean_disk = True, calibrate = True, use_mask = True, cell = 2.45, imsize = 1024, niter = 100000, threshold = 30000, stokes = 'RRLL', **kwargs):
+    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, compress_image = True, RL = False, clean_disk = True, calibrate = True, use_mask = True, save_model = False, cell = 2.45, imsize = 1024, niter = 100000, threshold = 30000, stokes = 'RRLL', **kwargs):
         fitsTime = srh_utils.ihhmm_format(self.freqTime[frequency, scan])
         imagename = 'srh_%sT%s_%04d'%(self.hduList[0].header['DATE-OBS'].replace('-',''), fitsTime.replace(':',''), self.freqList[frequency]*1e-3 + .5)
         absname = os.path.join(path, imagename)
@@ -991,7 +1020,7 @@ class SrhFitsFile1224(SrhFitsFile):
             # if clean_disk == False  -> add shift!
             
             self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, **kwargs)
-        self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan, compress_image = compress_image, RL = RL)
+        self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan, compress_image = compress_image, RL = RL, save_model = save_model)
         if remove_tables:
             rmtables(casa_imagename + '*')
             rmtables(absname + '.ms')
