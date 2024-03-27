@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "py310" ]
   pull_request:
     branches: [ "main" ]
 
@@ -19,18 +19,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.8
+    - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
-        python-version: "3.8"
+        python-version: "3.10"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest
-        #if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip install git+https://github.com/maria-globa/srhdata
-        #pip install numpy==1.19.2
-        python3 -m casatools --update-user-data
+        pip install git+https://github.com/maria-globa/srhdata@py310
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
