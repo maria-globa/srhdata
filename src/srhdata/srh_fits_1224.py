@@ -55,11 +55,20 @@ class SrhFitsFile1224(SrhFitsFile):
         file = Path(__file__).resolve()
         parent = str(file.parent)
         zerosFits = fits.open(parent + '/srh_1224_cp_zeros.fits')
-        corrZeros = zerosFits[2].data['corrI']
-        fluxZeros = zerosFits[2].data['fluxI']
+        skyLcp = zerosFits[2].data['skyLcp_c']
+        skyRcp = zerosFits[2].data['skyRcp_c']
+        fluxZerosLcp = zerosFits[2].data['skyLcp']
+        fluxZerosRcp = zerosFits[2].data['skyRcp']
 
         fluxNormFits = fits.open(parent + '/srh_1224_cp_fluxNorm.fits')
-        fluxNormI = fluxNormFits[2].data['fluxNormI']
+        fluxNormLcp = fluxNormFits[2].data['fluxNormLcp']
+        fluxNormRcp = fluxNormFits[2].data['fluxNormRcp']
+        
+        # for tt in range(self.dataLength):
+        #     self.ampLcp_c[:,tt,:] = self.ampLcp_c[:,tt,:] - skyLcp
+        #     self.ampRcp_c[:,tt,:] = self.ampRcp_c[:,tt,:] - skyRcp
+        # self.ampLcp_c[self.ampLcp_c <= 1e5] = 1e8
+        # self.ampRcp_c[self.ampRcp_c <= 1e5] = 1e8
         
         self.visLcp = self.visLcp / ((NP.sqrt(self.ampLcp_c[:,:,self.antennaA] * self.ampLcp_c[:,:,self.antennaB])))
         self.visRcp = self.visRcp / ((NP.sqrt(self.ampRcp_c[:,:,self.antennaA] * self.ampRcp_c[:,:,self.antennaB])))
@@ -67,44 +76,35 @@ class SrhFitsFile1224(SrhFitsFile):
         ampFluxRcp = NP.mean(self.ampRcp, axis = 2)
         ampFluxLcp = NP.mean(self.ampLcp, axis = 2)
 
-        # self.tempRcp = NP.zeros(self.freqListLength)
-        # self.tempLcp = NP.zeros(self.freqListLength)
+        self.tempRcp = NP.zeros(self.freqListLength)
+        self.tempLcp = NP.zeros(self.freqListLength)
         
         self.beam()
         for ff in range(self.freqListLength):
-            ampFluxRcp[ff,:] -= fluxZeros[ff]
-            ampFluxRcp[ff,:] *= fluxNormI[ff] 
-            ampFluxLcp[ff,:] -= fluxZeros[ff]
-            ampFluxLcp[ff,:] *= fluxNormI[ff] 
+            ampFluxRcp[ff,:] -= fluxZerosRcp[ff]
+            ampFluxRcp[ff,:] *= fluxNormRcp[ff]
+            ampFluxLcp[ff,:] -= fluxZerosLcp[ff]
+            ampFluxLcp[ff,:] *= fluxNormLcp[ff]
             
             self.fluxLcp[ff] = NP.mean(ampFluxLcp[ff])
             self.fluxRcp[ff] = NP.mean(ampFluxRcp[ff])
             
-            self.visLcp[ff,:,:] *= NP.mean(self.fluxLcp[ff])
-            self.visRcp[ff,:,:] *= NP.mean(self.fluxRcp[ff])
+            # self.visLcp[ff,:,:] *= NP.mean(self.fluxLcp[ff])
+            # self.visRcp[ff,:,:] *= NP.mean(self.fluxRcp[ff])
+
+            lam = scipy.constants.c/(self.freqList[ff]*1e3)
+            
+            self.tempLcp[ff] = NP.mean(ampFluxLcp[ff]) * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[ff])
+            self.tempRcp[ff] = NP.mean(ampFluxRcp[ff]) * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[ff])
+            
+            self.visLcp[ff,:,:] *= NP.mean(self.tempLcp[ff])
+            self.visRcp[ff,:,:] *= NP.mean(self.tempRcp[ff])
             
             self.visLcp[ff,:,:] *= 2 # flux is divided by 2 for R and L
-            self.visRcp[ff,:,:] *= 2
-            
-
-            # ampFluxRcp[ff,:] -= fluxZeros[ff]
-            # ampFluxRcp[ff,:] *= fluxNormI[ff] * 1e-22
-            # ampFluxLcp[ff,:] -= fluxZeros[ff]
-            # ampFluxLcp[ff,:] *= fluxNormI[ff] * 1e-22
-            
-            # lam = scipy.constants.c/(self.freqList[ff]*1e3)
-            
-            # self.tempLcp[ff] = NP.mean(ampFluxLcp[ff]) * lam**2 / (2*scipy.constants.k * self.beam_sr[ff])
-            # self.tempRcp[ff] = NP.mean(ampFluxRcp[ff]) * lam**2 / (2*scipy.constants.k * self.beam_sr[ff])
-            
-            # self.visLcp[ff,:,:] *= NP.mean(self.tempLcp[ff])
-            # self.visRcp[ff,:,:] *= NP.mean(self.tempRcp[ff])
-            
-            # self.visLcp[ff,:,:] *= 2 # flux is divided by 2 for R and L
-            # self.visRcp[ff,:,:] *= 2    
+            self.visRcp[ff,:,:] *= 2    
             
         self.flux_calibrated = True
-            
+
     def beam(self):
         self.setFrequencyChannel(0)
         self.vis2uv(0, average = 20, PSF = True)
@@ -521,10 +521,10 @@ class SrhFitsFile1224(SrhFitsFile):
         self.rcp = NP.fft.fft2(NP.roll(NP.roll(self.uvRcp,self.sizeOfUv//2+1,0),self.sizeOfUv//2+1,1));
         self.rcp = NP.roll(NP.roll(self.rcp,self.sizeOfUv//2-1,0),self.sizeOfUv//2-1,1);
         self.rcp = NP.flip(self.rcp, 1)
-        if self.flux_calibrated:
-            lam = scipy.constants.c/(self.freqList[self.frequencyChannel]*1e3)
-            self.lcp = self.lcp * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[self.frequencyChannel])
-            self.rcp = self.rcp * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[self.frequencyChannel])
+        # if self.flux_calibrated:
+        #     lam = scipy.constants.c/(self.freqList[self.frequencyChannel]*1e3)
+        #     self.lcp = self.lcp * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[self.frequencyChannel])
+        #     self.rcp = self.rcp * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[self.frequencyChannel])
         
     def lm2Heliocentric(self, image_scale = 0.5):
         scaling = self.RAO.getPQScale(self.sizeOfUv, NP.deg2rad(self.arcsecPerPixel * (self.sizeOfUv - 1)/3600.)/image_scale, self.freqList[self.frequencyChannel]*1e3)
@@ -768,12 +768,12 @@ class SrhFitsFile1224(SrhFitsFile):
         self.modelDisk = qSun_lm
         
     def saveAsUvFits(self, filename, frequency=0, **kwargs):
-        if self.flux_calibrated:
-            lam = scipy.constants.c/(self.freqList[frequency]*1e3)
-            visLcp = self.visLcp[frequency] * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[frequency])
-            visRcp = self.visRcp[frequency] * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[frequency])
+        # if self.flux_calibrated:
+        #     lam = scipy.constants.c/(self.freqList[frequency]*1e3)
+        #     visLcp = self.visLcp[frequency] * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[frequency])
+        #     visRcp = self.visRcp[frequency] * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[frequency])
         uv_fits = SrhUVData()
-        uv_fits.write_uvfits_1224(self, filename, visLcp, visRcp, frequency, **kwargs)
+        uv_fits.write_uvfits_1224(self, filename, self.visLcp[frequency], self.visRcp[frequency], frequency, **kwargs)
     
     def clean(self, imagename = 'images/0', cell = 2.45, imsize = 1024, niter = 100000, threshold = 60000, stokes = 'RRLL', **kwargs):
         tclean(vis = self.ms_name,
@@ -862,14 +862,14 @@ class SrhFitsFile1224(SrhFitsFile):
         disk_model = scipy.signal.fftconvolve(disk,kern) / dL**2
         disk_model = disk_model[dL//2:dL//2+imsize,dL//2:dL//2+imsize]
         disk_model[disk_model<1e-10] = 0
-        disk_model = disk_model * diskTb/1.3 * self.lm_hd_relation[self.frequencyChannel] / self.convolutionNormCoef# / 4
+        disk_model = disk_model * diskTb * self.lm_hd_relation[self.frequencyChannel] / self.convolutionNormCoef# / 4
         ia_data[:,:,0,0] = disk_model
         ia_data[:,:,1,0] = disk_model
         ia.putchunk(pixels=ia_data)
         ia.unlock()
         ia.close()
         
-    def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, scan, compress_image, RL = False, save_model = False):
+    def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, scan, compress_image, RL = False, save_model = False, clean_disk=True):
         ia = IA()
         ia.open(casa_imagename + '.image')
         try:
@@ -886,6 +886,12 @@ class SrhFitsFile1224(SrhFitsFile):
         
         rcp = warp(rcp,(shift + (rotate + back_shift)).inverse)
         lcp = warp(lcp,(shift + (rotate + back_shift)).inverse)
+        
+        if not clean_disk:
+            rcp[rcp!=0] += self.tempRcp[self.frequencyChannel]*2 /NP.count_nonzero(self.uvRcp)
+            lcp[lcp!=0] += self.tempLcp[self.frequencyChannel]*2 /NP.count_nonzero(self.uvLcp)
+            # print(self.tempRcp[self.frequencyChannel]*2 /NP.count_nonzero(self.uvRcp))
+            # print(self.tempLcp[self.frequencyChannel]*2 /NP.count_nonzero(self.uvLcp))
    
         if compress_image:
             O = imsize//2
@@ -1013,14 +1019,15 @@ class SrhFitsFile1224(SrhFitsFile):
         self.MSfromUvFits(absname+'.fits', absname+'.ms')
         if clean_disk:
             self.makeModel(modelname = casa_imagename + '_model', imagename = casa_imagename + '_temp')
-            a,b,ang = self.restoring_beam['major']['value'],self.restoring_beam['minor']['value'],self.restoring_beam['positionangle']['value']
-            rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
-            self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
+            # a,b,ang = self.restoring_beam['major']['value'],self.restoring_beam['minor']['value'],self.restoring_beam['positionangle']['value']
+            # rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
+            # self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
+            self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
         else:
             # if clean_disk == False  -> add shift!
             
             self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, **kwargs)
-        self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan, compress_image = compress_image, RL = RL, save_model = save_model)
+        self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan, compress_image = compress_image, RL = RL, save_model = save_model, clean_disk = clean_disk)
         if remove_tables:
             rmtables(casa_imagename + '*')
             rmtables(absname + '.ms')

@@ -33,6 +33,8 @@ class SrhFitsFile0612(SrhFitsFile):
         self.convolutionNormCoef = 18.7
         self.out_filenames = []
         super().open()
+        self.fluxLcp = NP.zeros(self.freqListLength)
+        self.fluxRcp = NP.zeros(self.freqListLength)
         if self.corr_amp_exist:
             self.normalizeFlux()
         x_size = (self.baselines-1)*2 + self.antNumberEW + self.antNumberNS
@@ -45,11 +47,20 @@ class SrhFitsFile0612(SrhFitsFile):
         file = Path(__file__).resolve()
         parent = str(file.parent)
         zerosFits = fits.open(parent + '/srh_0612_cp_zeros.fits')
-        corrZeros = zerosFits[2].data['corrI']
-        fluxZeros = zerosFits[2].data['fluxI']
+        skyLcp = zerosFits[2].data['skyLcp_c']
+        skyRcp = zerosFits[2].data['skyRcp_c']
+        fluxZerosLcp = zerosFits[2].data['skyLcp']
+        fluxZerosRcp = zerosFits[2].data['skyRcp']
 
         fluxNormFits = fits.open(parent + '/srh_0612_cp_fluxNorm.fits')
-        fluxNormI = fluxNormFits[2].data['fluxNormI']
+        fluxNormLcp = fluxNormFits[2].data['fluxNormLcp']
+        fluxNormRcp = fluxNormFits[2].data['fluxNormRcp']
+        
+        for tt in range(self.dataLength):
+            self.ampLcp_c[:,tt,:] = self.ampLcp_c[:,tt,:] - skyLcp
+            self.ampRcp_c[:,tt,:] = self.ampRcp_c[:,tt,:] - skyRcp
+        self.ampLcp_c[self.ampLcp_c <= 1e5] = 1e8
+        self.ampRcp_c[self.ampRcp_c <= 1e5] = 1e8
 
         self.visLcp = self.visLcp / ((NP.sqrt(self.ampLcp_c[:,:,self.antennaA] * self.ampLcp_c[:,:,self.antennaB])))
         self.visRcp = self.visRcp / ((NP.sqrt(self.ampRcp_c[:,:,self.antennaA] * self.ampRcp_c[:,:,self.antennaB])))
@@ -62,15 +73,18 @@ class SrhFitsFile0612(SrhFitsFile):
         
         self.beam()
         for ff in range(self.freqListLength):
-            ampFluxRcp[ff,:] -= fluxZeros[ff]
-            ampFluxRcp[ff,:] *= fluxNormI[ff] * 1e-22
-            ampFluxLcp[ff,:] -= fluxZeros[ff]
-            ampFluxLcp[ff,:] *= fluxNormI[ff] * 1e-22
+            ampFluxRcp[ff,:] -= fluxZerosRcp[ff]
+            ampFluxRcp[ff,:] *= fluxNormRcp[ff]
+            ampFluxLcp[ff,:] -= fluxZerosLcp[ff]
+            ampFluxLcp[ff,:] *= fluxNormLcp[ff]
+            
+            self.fluxLcp[ff] = NP.mean(ampFluxLcp[ff])
+            self.fluxRcp[ff] = NP.mean(ampFluxRcp[ff])
             
             lam = scipy.constants.c/(self.freqList[ff]*1e3)
             
-            self.tempLcp[ff] = NP.mean(ampFluxLcp[ff]) * lam**2 / (2*scipy.constants.k * self.beam_sr[ff])
-            self.tempRcp[ff] = NP.mean(ampFluxRcp[ff]) * lam**2 / (2*scipy.constants.k * self.beam_sr[ff])
+            self.tempLcp[ff] = NP.mean(ampFluxLcp[ff]) * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[ff])
+            self.tempRcp[ff] = NP.mean(ampFluxRcp[ff]) * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[ff])
 
             self.visLcp[ff,:,:] *= NP.mean(self.tempLcp[ff])
             self.visRcp[ff,:,:] *= NP.mean(self.tempRcp[ff])
@@ -918,10 +932,11 @@ class SrhFitsFile0612(SrhFitsFile):
         self.makeMaskModel(modelname = casa_imagename + '_model', maskname = casa_imagename + '_mask', imagename = casa_imagename + '_temp')
         if not use_mask:
             self.mask_name = ''
-        a,b,ang = self.restoring_beam['major']['value'],self.restoring_beam['minor']['value'],self.restoring_beam['positionangle']['value']
-        rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
+        # a,b,ang = self.restoring_beam['major']['value'],self.restoring_beam['minor']['value'],self.restoring_beam['positionangle']['value']
+        # rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
         if clean_disk:
-            self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
+            # self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
+            self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
         else:
             self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, **kwargs)
         self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan, compress_image = compress_image, RL = RL, save_model = save_model)

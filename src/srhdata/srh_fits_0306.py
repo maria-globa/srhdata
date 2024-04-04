@@ -35,6 +35,8 @@ class SrhFitsFile0306(SrhFitsFile):
         self.antZeroRow = self.hduList[3].data['ant_zero_row'][:97]
         self.lcpShift = NP.ones(self.freqListLength) # 0-frequency component in the spectrum
         self.rcpShift = NP.ones(self.freqListLength)
+        self.fluxLcp = NP.zeros(self.freqListLength)
+        self.fluxRcp = NP.zeros(self.freqListLength)
         self.convolutionNormCoef = 44.8
         self.out_filenames = []
         if self.corr_amp_exist:
@@ -44,11 +46,14 @@ class SrhFitsFile0306(SrhFitsFile):
         file = Path(__file__).resolve()
         parent = str(file.parent)
         zerosFits = fits.open(parent + '/srh_0306_cp_zeros.fits')
-        corrZeros = zerosFits[2].data['corrI']
-        fluxZeros = zerosFits[2].data['fluxI']
+        skyLcp = zerosFits[2].data['skyLcp_c']
+        skyRcp = zerosFits[2].data['skyRcp_c']
+        fluxZerosLcp = zerosFits[2].data['skyLcp']
+        fluxZerosRcp = zerosFits[2].data['skyRcp']
 
         fluxNormFits = fits.open(parent + '/srh_0306_cp_fluxNorm.fits')
-        fluxNormI = fluxNormFits[2].data['fluxNormI']
+        fluxNormLcp = fluxNormFits[2].data['fluxNormLcp']
+        fluxNormRcp = fluxNormFits[2].data['fluxNormRcp']
         
         antA_new = self.antennaA.copy()
         antA_new[self.antennaA<98] += 30
@@ -57,6 +62,12 @@ class SrhFitsFile0306(SrhFitsFile):
         antB_new = self.antennaB.copy()
         antB_new[self.antennaB<98] += 30
         antB_new[self.antennaB>=98] -= 98
+        
+        for tt in range(self.dataLength):
+            self.ampLcp_c[:,tt,:] = self.ampLcp_c[:,tt,:] - skyLcp
+            self.ampRcp_c[:,tt,:] = self.ampRcp_c[:,tt,:] - skyRcp
+        self.ampLcp_c[self.ampLcp_c <= 1e5] = 1e8
+        self.ampRcp_c[self.ampRcp_c <= 1e5] = 1e8
         
         self.antAmp_Lcp = NP.sqrt(NP.abs(self.ampLcp_c[:,:,antA_new]) * NP.abs(self.ampLcp_c[:,:,antB_new]))
         self.antAmp_Rcp = NP.sqrt(NP.abs(self.ampRcp_c[:,:,antA_new]) * NP.abs(self.ampRcp_c[:,:,antB_new]))
@@ -73,15 +84,18 @@ class SrhFitsFile0306(SrhFitsFile):
         
         self.beam()
         for ff in range(self.freqListLength):
-            ampFluxRcp[ff,:] -= fluxZeros[ff]
-            ampFluxRcp[ff,:] *= fluxNormI[ff] * 1e-22
-            ampFluxLcp[ff,:] -= fluxZeros[ff]
-            ampFluxLcp[ff,:] *= fluxNormI[ff] * 1e-22
+            ampFluxRcp[ff,:] -= fluxZerosRcp[ff]
+            ampFluxRcp[ff,:] *= fluxNormRcp[ff]
+            ampFluxLcp[ff,:] -= fluxZerosLcp[ff]
+            ampFluxLcp[ff,:] *= fluxNormLcp[ff]
+            
+            self.fluxLcp[ff] = NP.mean(ampFluxLcp[ff])
+            self.fluxRcp[ff] = NP.mean(ampFluxRcp[ff])
             
             lam = scipy.constants.c/(self.freqList[ff]*1e3)
             
-            self.tempLcp[ff] = NP.mean(ampFluxLcp[ff]) * lam**2 / (2*scipy.constants.k * self.beam_sr[ff])
-            self.tempRcp[ff] = NP.mean(ampFluxRcp[ff]) * lam**2 / (2*scipy.constants.k * self.beam_sr[ff])
+            self.tempLcp[ff] = NP.mean(ampFluxLcp[ff]) * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[ff])
+            self.tempRcp[ff] = NP.mean(ampFluxRcp[ff]) * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[ff])
             
             self.visLcp[ff,:,:] *= NP.mean(self.tempLcp[ff])
             self.visRcp[ff,:,:] *= NP.mean(self.tempRcp[ff])
@@ -715,7 +729,7 @@ class SrhFitsFile0306(SrhFitsFile):
         ia.unlock()
         ia.close()
         
-    def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, scan, compress_image, RL = False, save_model = False):
+    def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, scan, compress_image, RL = False, save_model = False, clean_disk = True):
         ia = IA()
         ia.open(casa_imagename + '.image')
         try:
@@ -732,6 +746,10 @@ class SrhFitsFile0306(SrhFitsFile):
         
         rcp = warp(rcp,(shift + (rotate + back_shift)).inverse)
         lcp = warp(lcp,(shift + (rotate + back_shift)).inverse)
+        
+        if not clean_disk:
+            rcp[rcp!=0] += self.tempRcp[self.frequencyChannel]*2 /NP.count_nonzero(self.uvRcp)
+            lcp[lcp!=0] += self.tempLcp[self.frequencyChannel]*2 /NP.count_nonzero(self.uvLcp)
    
         if compress_image:
             O = imsize//2
@@ -859,14 +877,15 @@ class SrhFitsFile0306(SrhFitsFile):
         self.MSfromUvFits(absname+'.fits', absname+'.ms')
         if clean_disk:
             self.makeModel(modelname = casa_imagename + '_model', imagename = casa_imagename + '_temp')
-            a,b,ang = self.restoring_beam['major']['value'],self.restoring_beam['minor']['value'],self.restoring_beam['positionangle']['value']
-            rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
-            self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
+            # a,b,ang = self.restoring_beam['major']['value'],self.restoring_beam['minor']['value'],self.restoring_beam['positionangle']['value']
+            # rb = ['%.2farcsec'%(a*0.8), '%.2farcsec'%(b*0.8), '%.2fdeg'%ang]
+            # self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, restoringbeam=rb, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
+            self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
         else:
             # if clean_disk == False  -> add shift!
             
             self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, **kwargs)
-        self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan, compress_image = compress_image, RL = RL, save_model = save_model)
+        self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan, compress_image = compress_image, RL = RL, save_model = save_model, clean_disk = clean_disk)
         if remove_tables:
             rmtables(casa_imagename + '*')
             rmtables(absname + '.ms')
