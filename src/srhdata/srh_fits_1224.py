@@ -723,19 +723,22 @@ class SrhFitsFile1224(SrhFitsFile):
 
     def correctPhaseSlopeRL(self, freq):
         workingAnts_ew = NP.arange(0,self.antNumberEW,1)
-        workingAnts_ew = NP.delete(workingAnts_ew, NP.append(self.flags_ew, NP.array((0,))))
+        y_diff = NP.append(0, self.antY[1:self.antNumberEW]/self.base - self.antY[:self.antNumberEW-1]/self.base)
+        workingAnts_ew = NP.delete(workingAnts_ew, NP.append(self.flags_ew, NP.where((y_diff)!=1)))
         phaseDif_ew = NP.unwrap((self.ewAntPhaLcp[freq][workingAnts_ew]+self.ewLcpPhaseCorrection[freq][workingAnts_ew])
                              - (self.ewAntPhaRcp[freq][workingAnts_ew]+self.ewRcpPhaseCorrection[freq][workingAnts_ew]))
         A = NP.vstack([workingAnts_ew, NP.ones(len(workingAnts_ew))]).T
         ew_slope, c = NP.linalg.lstsq(A, phaseDif_ew, rcond=None)[0]
         workingAnts_ns = NP.arange(0,self.antNumberNS,1)
-        workingAnts_ns = NP.delete(workingAnts_ns, self.flags_ns)
+        workingAnts_ns = NP.delete(workingAnts_ns, NP.append(self.flags_ns, NP.array((25,64))))
+        ns_ants = NP.abs(self.antX[self.antNumberEW:]/self.base)
+        ns_ants = NP.delete(ns_ants, NP.append(self.flags_ns, NP.array((25,64))))
         phaseDif_ns = NP.unwrap((self.nsAntPhaLcp[freq][workingAnts_ns]+self.nsLcpPhaseCorrection[freq][workingAnts_ns])
                              - (self.nsAntPhaRcp[freq][workingAnts_ns]+self.nsRcpPhaseCorrection[freq][workingAnts_ns]))
-        A = NP.vstack([workingAnts_ns, NP.ones(len(workingAnts_ns))]).T
+        A = NP.vstack([ns_ants, NP.ones(len(ns_ants))]).T
         ns_slope, c = NP.linalg.lstsq(A, phaseDif_ns, rcond=None)[0]
         self.ewSlopeRcp[freq] = srh_utils.wrap(self.ewSlopeRcp[freq] + NP.rad2deg(ew_slope))
-        self.nsSlopeRcp[freq] = srh_utils.wrap(self.nsSlopeRcp[freq] - NP.rad2deg(ns_slope))
+        self.nsSlopeRcp[freq] = srh_utils.wrap(self.nsSlopeRcp[freq] + NP.rad2deg(ns_slope))
 
     def centerDisk(self, long = True):
         if long:
