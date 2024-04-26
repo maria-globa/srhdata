@@ -220,6 +220,36 @@ class SrhFitsFile():
         except FileNotFoundError:
             print('File %s  not found'%name);
             
+    def select_scans(self, task):
+        scans_in_file = self.dataLength//len(self.filenames)
+        scans = NP.array((), dtype = int)
+        for i in range(len(self.filenames)):
+            scans = NP.append(scans, NP.array(task['task'][i]['scans']) + scans_in_file * i)
+        print('selected scans: ', scans)
+        self.dataLength = len(scans)
+        self.freqTime = self.freqTime[:, scans]
+        try:
+            self.freqTimeLcp = self.freqTimeLcp[:, scans]
+            self.freqTimeRcp = self.freqTimeRcp[:, scans]
+        except:
+            pass
+        self.visLcp = self.visLcp[:, scans, :]
+        self.visRcp = self.visRcp[:, scans, :]
+        self.ampLcp = self.ampLcp[:, scans, :]
+        self.ampRcp = self.ampRcp[:, scans, :]
+        try:
+            self.ampLcp_c = self.ampLcp_c[:, scans, :]
+            self.ampRcp_c = self.ampRcp_c[:, scans, :]
+        except:
+            pass
+        try:
+            self.subpacketLcp = self.subpacketLcp[:, scans]
+            self.subpacketRcp = self.subpacketRcp[:, scans]
+            self.validScansLcp = self.validScansLcp[:, scans]
+            self.validScansRcp = self.validScansRcp[:, scans]
+        except:
+            pass
+            
     def calibrate(self, freq = 'all', phaseCorrect = True, amplitudeCorrect = True, average = 20):
         if freq == 'all':
             self.calculatePhaseCalibration()
