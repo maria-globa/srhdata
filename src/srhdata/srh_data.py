@@ -71,6 +71,11 @@ def execute_task(synth_task):
                       clean_disk = synth_task['params']['clean_disk'],
                       cell = synth_task['params']['cdelt'],
                       imsize = synth_task['params']['naxis'])
+    if out_pol:
+        return {'R' : srh_obj.out_filenames[0], 'L' : srh_obj.out_filenames[1]}
+    else:
+        return {'I' : srh_obj.out_filenames[0], 'V' : srh_obj.out_filenames[1]}
+    
 
 class UnknownArray(Exception):
     def __init__(self, srh_array, message="SRH array is unknown"):
