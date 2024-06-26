@@ -64,7 +64,7 @@ def execute_task(synth_task):
     srh_obj.select_scans(synth_task)
     out_pol = synth_task['params']['output_polarizations'] == 'RL'
     srh_obj.makeImage(path = synth_task['params']['outdir'],
-                      frequency = synth_task['params']['frequency_index'],
+                      frequency = synth_task['task'][0]['frequency_index'],
                       average = srh_obj.dataLength,
                       compress_image = synth_task['params']['compressed'],
                       RL = out_pol,
