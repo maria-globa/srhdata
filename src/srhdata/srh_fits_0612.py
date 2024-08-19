@@ -22,6 +22,7 @@ import skimage.measure
 from pathlib import Path
 from sunpy.map.header_helper import make_heliographic_header
 from sunpy.coordinates import get_earth
+from scipy.interpolate import RegularGridInterpolator
 
 class SrhFitsFile0612(SrhFitsFile):
     def __init__(self, name):
@@ -797,7 +798,7 @@ class SrhFitsFile0612(SrhFitsFile):
         ia.unlock()
         ia.close()      
         
-    def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, scan, compress_image, RL = False, save_model = False):
+    def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, naxis, scan, RL = False, save_model = False):
         ia = IA()
         ia.open(casa_imagename + '.image')
         try:
@@ -815,15 +816,16 @@ class SrhFitsFile0612(SrhFitsFile):
         rcp = warp(rcp,(shift + (rotate + back_shift)).inverse)
         lcp = warp(lcp,(shift + (rotate + back_shift)).inverse)
         
-        if compress_image:
-            O = imsize//2
-            Q = imsize//4
-            scale = AffineTransform(scale=(0.5,0.5))
-            rcp = warp(rcp,(shift + (scale + back_shift)).inverse)[O-Q:O+Q,O-Q:O+Q]
-            lcp = warp(lcp,(shift + (scale + back_shift)).inverse)[O-Q:O+Q,O-Q:O+Q]
-            
-            cdelt = 4.9
-            crpix = 256
+        if imsize != naxis:
+           x, y = NP.linspace(0,imsize-1,imsize), NP.linspace(0,imsize-1,imsize)
+           interp = RegularGridInterpolator((x, y), rcp)
+           xx,yy = NP.linspace(0,imsize-1,naxis), NP.linspace(0,imsize-1,naxis)
+           X, Y = NP.meshgrid(xx, yy, indexing='ij')
+           rcp = interp((X, Y))
+           interp = RegularGridInterpolator((x, y), lcp)
+           lcp = interp((X, Y))
+           cdelt = cell * imsize / naxis
+           crpix = naxis/2
         else:
             cdelt = cell
             crpix = imsize//2
@@ -837,6 +839,9 @@ class SrhFitsFile0612(SrhFitsFile):
         pHeader['INSTRUME']     = self.hduList[0].header['INSTRUME']
         pHeader['ORIGIN']       = self.hduList[0].header['ORIGIN']
         pHeader['FREQUENC']     = ('%d') % (self.freqList[self.frequencyChannel]/1e3 + 0.5)
+        pHeader['NAXIS']        = 2
+        pHeader['NAXIS1']       = naxis
+        pHeader['NAXIS2']       = naxis
         pHeader['CDELT1']       = cdelt
         pHeader['CDELT2']       = cdelt
         pHeader['CRPIX1']       = crpix
@@ -906,12 +911,14 @@ class SrhFitsFile0612(SrhFitsFile):
             rcp_model = warp(rcp_model,(shift + (rotate + back_shift)).inverse)
             lcp_model = warp(lcp_model,(shift + (rotate + back_shift)).inverse)
        
-            if compress_image:
-                O = imsize//2
-                Q = imsize//4
-                scale = AffineTransform(scale=(0.5,0.5))
-                rcp_model = warp(rcp_model,(shift + (scale + back_shift)).inverse)[O-Q:O+Q,O-Q:O+Q]
-                lcp_model = warp(lcp_model,(shift + (scale + back_shift)).inverse)[O-Q:O+Q,O-Q:O+Q]
+            if imsize != naxis:
+                x, y = NP.linspace(0,imsize-1,imsize), NP.linspace(0,imsize-1,imsize)
+                interp = RegularGridInterpolator((x, y), rcp_model)
+                xx,yy = NP.linspace(0,imsize-1,naxis), NP.linspace(0,imsize-1,naxis)
+                X, Y = NP.meshgrid(xx, yy, indexing='ij')
+                rcp_model = interp((X, Y))
+                interp = RegularGridInterpolator((x, y), lcp_model)
+                lcp_model = interp((X, Y))
             
             saveFitsRCPhdu = fits.PrimaryHDU(header=pHeader, data=rcp_model.astype('float32'))
             saveFitsRCPpath = fits_imagename + '_RCP_model.fit'
@@ -926,7 +933,10 @@ class SrhFitsFile0612(SrhFitsFile):
             self.out_filenames.append(saveFitsRCPpath)
             self.out_filenames.append(saveFitsLCPpath)
         
-    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, compress_image = True, RL = False, clean_disk = True, calibrate = True, use_mask = True, save_model = False, cell = 2.45, imsize = 1024, niter = 100000, threshold = 30000, stokes = 'RRLL', **kwargs):
+    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, naxis = 512, cdelt = 4.9, RL = False, clean_disk = True, calibrate = True, use_mask = True, save_model = False, niter = 100000, threshold = 30000, stokes = 'RRLL', **kwargs):
+        cell = 2.45
+        imsize = int(naxis * cdelt / cell)
+        
         fitsTime = srh_utils.ihhmm_format(self.freqTime[frequency, scan])
         imagename = 'srh_%sT%s_%04d'%(self.hduList[0].header['DATE-OBS'].replace('-',''), fitsTime.replace(':',''), self.freqList[frequency]*1e-3 + .5)
         absname = os.path.join(path, imagename)
@@ -949,7 +959,7 @@ class SrhFitsFile0612(SrhFitsFile):
             self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
         else:
             self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, **kwargs)
-        self.casaImage2Fits(casa_imagename, absname, cell, imsize, scan, compress_image = compress_image, RL = RL, save_model = save_model)
+        self.casaImage2Fits(casa_imagename, absname, cell, imsize, naxis, scan, RL = RL, save_model = save_model)
         if remove_tables:
             rmtables(casa_imagename + '*')
             rmtables(absname + '.ms')
