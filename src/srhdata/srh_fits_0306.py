@@ -22,6 +22,8 @@ from .ZirinTb import ZirinTb
 from astropy.io import fits
 import skimage.measure
 from pathlib import Path
+from sunpy.map.header_helper import make_heliographic_header
+from sunpy.coordinates import get_earth
 
 class SrhFitsFile0306(SrhFitsFile):
     def __init__(self, name):
@@ -789,7 +791,14 @@ class SrhFitsFile0306(SrhFitsFile):
         pHeader['CRVAL1'] = 0
         pHeader['CRVAL2'] = 0
         pHeader['WAVELNTH'] = pHeader['FREQUENC'] + ' MHz'
-    
+        
+        date = self.hduList[0].header['DATE-OBS']+'T'+fitsTime
+        observer = get_earth(date)
+        header = make_heliographic_header(date, observer, [512, 512], frame='carrington')
+        pHeader['HGLT_OBS'] = header['hglt_obs']
+        pHeader['DSUN_OBS'] = header['dsun_obs']
+        pHeader['HGLN_OBS'] = header['hgln_obs']
+        pHeader['RSUN_REF'] = header['rsun_ref']
         
         ewLcpPhaseColumn = fits.Column(name='ewLcpPhase', format='D', array = self.ewAntPhaLcp[self.frequencyChannel,:] + self.ewLcpPhaseCorrection[self.frequencyChannel,:])
         ewRcpPhaseColumn = fits.Column(name='ewRcpPhase', format='D', array = self.ewAntPhaRcp[self.frequencyChannel,:] + self.ewRcpPhaseCorrection[self.frequencyChannel,:])
