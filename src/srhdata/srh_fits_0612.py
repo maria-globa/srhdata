@@ -337,6 +337,8 @@ class SrhFitsFile0612(SrhFitsFile):
         self.nsAntAmpLcp[freqChannel] = NP.abs(self.ns_gains_lcp)/norm
         self.nsAntAmpLcp[freqChannel][self.nsAntAmpLcp[freqChannel]<NP.median(self.nsAntAmpLcp[freqChannel])*0.5] = 1e6
     
+        self.calibration_fun_sum_lcp[freqChannel] = NP.sum(ls_res['fun']**2)
+    
     def calculatePhaseRcp_nonlinear(self, freqChannel, baselinesNumber = 5):
         antNumberNS = self.antNumberNS
         antNumberEW = self.antNumberEW
@@ -415,6 +417,8 @@ class SrhFitsFile0612(SrhFitsFile):
         norm = NP.mean(NP.abs(self.ns_gains_rcp[NP.abs(self.ns_gains_rcp)>NP.median(NP.abs(self.ns_gains_rcp))*0.5]))
         self.nsAntAmpRcp[freqChannel] = NP.abs(self.ns_gains_rcp)/norm
         self.nsAntAmpRcp[freqChannel][self.nsAntAmpRcp[freqChannel]<NP.median(self.nsAntAmpRcp[freqChannel])*0.5] = 1e6
+        
+        self.calibration_fun_sum_rcp[freqChannel] = NP.sum(ls_res['fun']**2)
         
     def allGainsFunc_constrained(self, x, obsVis, antNumberEW, antNumberS, baselinesNumber, freqChannel,
                 res, ewSolarAmp, sGainsNumber, ewGainsNumber, sSolVisNumber, 

@@ -151,6 +151,9 @@ class SrhFitsFile():
                 self.calibrationResultLcp = NP.zeros_like(self.x_ini_lcp)
                 self.calibrationResultRcp = NP.zeros_like(self.x_ini_rcp)
                 
+                self.calibration_fun_sum_lcp = NP.zeros(self.freqListLength) # sum of residuals returned by scipy.optimize (ls_res['fun'])
+                self.calibration_fun_sum_rcp = NP.zeros(self.freqListLength)
+                
                 self.beam_sr = NP.ones(self.freqListLength)
                 
             except FileNotFoundError:
@@ -293,7 +296,33 @@ class SrhFitsFile():
         with open(filename, 'w') as saveGainFile:
             json.dump(currentGainsDict, saveGainFile)
             
-    def loadGains(self, filename):
+    def loadGains(self, gains):
+        if type(gains) == 'string':
+            self.loadGainsFromFile(gains)
+        if type(gains) == dict:
+            self.loadGainsFromDict(gains)
+            
+    def loadGainsFromDict(self, gains):
+        if self.hduList[0].header['INSTRUME'] == gains['array']:
+            try:
+                frequency = NP.where(self.freqList==gains['frequency'])[0][0]
+            except:
+                raise Exception('Frequency %d is not in the list' % gains['frequency'])
+
+            self.nsAntAmpRcp[frequency] = gains['gains_R_amplitude'][:self.antNumberNS]
+            self.ewAntAmpRcp[frequency] = gains['gains_R_amplitude'][self.antNumberNS:]
+            self.nsAntAmpLcp[frequency] = gains['gains_L_amplitude'][:self.antNumberNS]
+            self.ewAntAmpLcp[frequency] = gains['gains_L_amplitude'][self.antNumberNS:]
+            self.nsAntPhaRcp[frequency] = gains['gains_R_phase'][:self.antNumberNS]
+            self.ewAntPhaRcp[frequency] = gains['gains_R_phase'][self.antNumberNS:]
+            self.nsAntPhaLcp[frequency] = gains['gains_L_phase'][:self.antNumberNS]
+            self.ewAntPhaLcp[frequency] = gains['gains_L_phase'][self.antNumberNS:]
+            self.calibration_fun_sum_rcp[frequency] = gains['residual_R']
+            self.calibration_fun_sum_lcp[frequency] = gains['residual_L']
+        else:
+            raise Exception('Attempted to load %s gains for %s array' % (gains['array'], self.hduList[0].header['INSTRUME']))
+            
+    def loadGainsFromFile(self, filename):
         with open(filename,'r') as readGainFile:
             currentGains = json.load(readGainFile)
         self.ewAntPhaLcp = NP.array(currentGains['ewPhaseLcp'])
@@ -327,6 +356,22 @@ class SrhFitsFile():
         except:
             pass
         self.lm_hd_relation = NP.array(currentGains['lm_hd_relation'])
+        
+    def getGains(self, frequency):
+        gains_dict = {}
+        gains_dict['time'] = self.dateObs
+        gains_dict['array'] = self.hduList[0].header['INSTRUME']
+        gains_dict['algorithm'] = 'globa'
+        gains_dict['frequency'] = self.freqList[frequency]
+        gains_dict['antennas'] = self.antennaNames
+        gains_dict['gains_R_amplitude'] = NP.append(self.nsAntAmpRcp[frequency], self.ewAntAmpRcp[frequency])
+        gains_dict['gains_L_amplitude'] = NP.append(self.nsAntAmpLcp[frequency], self.ewAntAmpLcp[frequency])
+        gains_dict['gains_R_phase'] = NP.append(self.nsAntPhaRcp[frequency], self.ewAntPhaRcp[frequency])
+        gains_dict['gains_L_phase'] = NP.append(self.nsAntPhaLcp[frequency], self.ewAntPhaLcp[frequency])
+        gains_dict['residual_R'] = self.calibration_fun_sum_rcp[frequency]
+        gains_dict['residual_L'] = self.calibration_fun_sum_lcp[frequency]
+        gains_dict['additional'] = {}
+        return gains_dict
         
     def loadRLdif(self, filename):
         with open(filename,'r') as readRLDifFile:
