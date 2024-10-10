@@ -46,6 +46,7 @@ def open(files):
 
 def execute_task(synth_task):
     files = []
+    calibrate = True
     for i in range(len(synth_task['task'])):
         files.append(synth_task['task'][i]['file_path'])
     if same_array(files):
@@ -63,6 +64,9 @@ def execute_task(synth_task):
         raise Exception("Input data must be measured by the same array (3-6, 6-12 or 12-24)")
     srh_obj.select_scans(synth_task)
     out_pol = synth_task['params']['output_polarizations'] == 'RL'
+    if 'gains' in synth_task.keys():
+        srh_obj.loadGains(synth_task['gains'])
+        calibrate = False
     srh_obj.makeImage(path = synth_task['params']['outdir'],
                       frequency = synth_task['task'][0]['frequency_index'],
                       average = srh_obj.dataLength,
@@ -70,7 +74,8 @@ def execute_task(synth_task):
                       RL = out_pol,
                       clean_disk = synth_task['params']['clean_disk'],
                       cdelt = synth_task['params']['cdelt'],
-                      naxis = synth_task['params']['naxis'])
+                      naxis = synth_task['params']['naxis'], 
+                      calibrate = calibrate)
     if out_pol:
         return {'R' : srh_obj.out_filenames[0], 'L' : srh_obj.out_filenames[1]}
     else:
