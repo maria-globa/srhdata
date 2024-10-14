@@ -80,7 +80,28 @@ def execute_task(synth_task):
         return {'R' : srh_obj.out_filenames[0], 'L' : srh_obj.out_filenames[1]}
     else:
         return {'I' : srh_obj.out_filenames[0], 'V' : srh_obj.out_filenames[1]}
-    
+
+def execute_task_calibration(synth_task):
+    files = []
+    for i in range(len(synth_task['task'])):
+        files.append(synth_task['task'][i]['file_path'])
+    if same_array(files):
+        f = fits.open(files[0])
+        srh_array = f[0].header['INSTRUME']
+        if srh_array == 'SRH0306':
+            srh_obj = SrhFitsFile0306(files)
+        elif srh_array == 'SRH0612':
+            srh_obj = SrhFitsFile0612(files)
+        elif srh_array == 'SRH1224':
+            srh_obj = SrhFitsFile1224(files)
+        else:
+            raise UnknownArray(srh_array)
+    else:
+        raise Exception("Input data must be measured by the same array (3-6, 6-12 or 12-24)")
+    srh_obj.select_scans(synth_task)
+    srh_obj.calibrate(freq = synth_task['task'][0]['frequency_index'])
+    return srh_obj.getGains(synth_task['task'][0]['frequency_index'])
+  
 
 class UnknownArray(Exception):
     def __init__(self, srh_array, message="SRH array is unknown"):
