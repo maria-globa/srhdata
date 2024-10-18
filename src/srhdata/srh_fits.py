@@ -358,7 +358,7 @@ class SrhFitsFile():
         self.lm_hd_relation = NP.array(currentGains['lm_hd_relation'])
         
     def getGains(self, frequency):
-        ant_mask = NP.ones(len(self.antennaNames))
+        ant_mask = NP.ones(len(self.antennaNames), dtype = int)
         ant_mask[NP.append(self.flags_ns, self.flags_ew+self.antNumberNS)] = 0
         gains_dict = {}
         gains_dict['time'] = self.dateObs
