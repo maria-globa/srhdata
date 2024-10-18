@@ -309,14 +309,14 @@ class SrhFitsFile():
             except:
                 raise Exception('Frequency %d is not in the list' % gains['frequency'])
 
-            self.nsAntAmpRcp[frequency] = gains['gains_R_amplitude'][:self.antNumberNS]
-            self.ewAntAmpRcp[frequency] = gains['gains_R_amplitude'][self.antNumberNS:]
-            self.nsAntAmpLcp[frequency] = gains['gains_L_amplitude'][:self.antNumberNS]
-            self.ewAntAmpLcp[frequency] = gains['gains_L_amplitude'][self.antNumberNS:]
-            self.nsAntPhaRcp[frequency] = gains['gains_R_phase'][:self.antNumberNS]
-            self.ewAntPhaRcp[frequency] = gains['gains_R_phase'][self.antNumberNS:]
-            self.nsAntPhaLcp[frequency] = gains['gains_L_phase'][:self.antNumberNS]
-            self.ewAntPhaLcp[frequency] = gains['gains_L_phase'][self.antNumberNS:]
+            self.nsAntAmpRcp[frequency] = NP.array(gains['gains_R_amplitude'][:self.antNumberNS])
+            self.ewAntAmpRcp[frequency] = NP.array(gains['gains_R_amplitude'][self.antNumberNS:])
+            self.nsAntAmpLcp[frequency] = NP.array(gains['gains_L_amplitude'][:self.antNumberNS])
+            self.ewAntAmpLcp[frequency] = NP.array(gains['gains_L_amplitude'][self.antNumberNS:])
+            self.nsAntPhaRcp[frequency] = NP.array(gains['gains_R_phase'][:self.antNumberNS])
+            self.ewAntPhaRcp[frequency] = NP.array(gains['gains_R_phase'][self.antNumberNS:])
+            self.nsAntPhaLcp[frequency] = NP.array(gains['gains_L_phase'][:self.antNumberNS])
+            self.ewAntPhaLcp[frequency] = NP.array(gains['gains_L_phase'][self.antNumberNS:])
             self.calibration_fun_sum_rcp[frequency] = gains['residual_R']
             self.calibration_fun_sum_lcp[frequency] = gains['residual_L']
         else:
@@ -358,19 +358,22 @@ class SrhFitsFile():
         self.lm_hd_relation = NP.array(currentGains['lm_hd_relation'])
         
     def getGains(self, frequency):
+        ant_mask = NP.ones(len(self.antennaNames))
+        ant_mask[NP.append(self.flags_ns, self.flags_ew+self.antNumberNS)] = 0
         gains_dict = {}
         gains_dict['time'] = self.dateObs
         gains_dict['array'] = self.hduList[0].header['INSTRUME']
         gains_dict['algorithm'] = 'globa'
-        gains_dict['frequency'] = self.freqList[frequency]
-        gains_dict['antennas'] = self.antennaNames
-        gains_dict['gains_R_amplitude'] = NP.append(self.nsAntAmpRcp[frequency], self.ewAntAmpRcp[frequency])
-        gains_dict['gains_L_amplitude'] = NP.append(self.nsAntAmpLcp[frequency], self.ewAntAmpLcp[frequency])
-        gains_dict['gains_R_phase'] = NP.append(self.nsAntPhaRcp[frequency], self.ewAntPhaRcp[frequency])
-        gains_dict['gains_L_phase'] = NP.append(self.nsAntPhaLcp[frequency], self.ewAntPhaLcp[frequency])
-        gains_dict['residual_R'] = self.calibration_fun_sum_rcp[frequency]
-        gains_dict['residual_L'] = self.calibration_fun_sum_lcp[frequency]
+        gains_dict['frequency'] = int(self.freqList[frequency])
+        gains_dict['antennas'] = self.antennaNames.tolist()
+        gains_dict['gains_R_amplitude'] = NP.append(self.nsAntAmpRcp[frequency], self.ewAntAmpRcp[frequency]).tolist()
+        gains_dict['gains_L_amplitude'] = NP.append(self.nsAntAmpLcp[frequency], self.ewAntAmpLcp[frequency]).tolist()
+        gains_dict['gains_R_phase'] = NP.append(self.nsAntPhaRcp[frequency], self.ewAntPhaRcp[frequency]).tolist()
+        gains_dict['gains_L_phase'] = NP.append(self.nsAntPhaLcp[frequency], self.ewAntPhaLcp[frequency]).tolist()
+        gains_dict['residual_R'] = float(self.calibration_fun_sum_rcp[frequency])
+        gains_dict['residual_L'] = float(self.calibration_fun_sum_lcp[frequency])
         gains_dict['additional'] = {}
+        gains_dict['antenna_mask'] = ant_mask.tolist()
         return gains_dict
         
     def loadRLdif(self, filename):
