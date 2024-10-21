@@ -305,7 +305,7 @@ class SrhFitsFile():
     def loadGainsFromDict(self, gains):
         if self.hduList[0].header['INSTRUME'] == gains['array']:
             try:
-                frequency = NP.where(self.freqList==gains['frequency'])[0][0]
+                frequency = NP.where(self.freqList==gains['frequency']*1e3)[0][0]
             except:
                 raise Exception('Frequency %d is not in the list' % gains['frequency'])
 
