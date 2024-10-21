@@ -364,7 +364,7 @@ class SrhFitsFile():
         gains_dict['time'] = self.dateObs
         gains_dict['array'] = self.hduList[0].header['INSTRUME']
         gains_dict['algorithm'] = 'globa'
-        gains_dict['frequency'] = int(self.freqList[frequency])
+        gains_dict['frequency'] = int(self.freqList[frequency]*1e-3)
         gains_dict['antennas'] = self.antennaNames.tolist()
         gains_dict['gains_R_amplitude'] = NP.append(self.nsAntAmpRcp[frequency], self.ewAntAmpRcp[frequency]).tolist()
         gains_dict['gains_L_amplitude'] = NP.append(self.nsAntAmpLcp[frequency], self.ewAntAmpLcp[frequency]).tolist()
