@@ -65,6 +65,15 @@ def execute_task(synth_task):
     srh_obj.select_scans(synth_task)
     out_pol = synth_task['params']['output_polarizations'] == 'RL'
     if 'gains' in synth_task.keys():
+        antenna_order = [str(s).strip() for s in srh_obj.antennaNames]
+        sorting_keys = ("antennas", "gains_R_amplitude", "gains_L_amplitude", "gains_R_phase", "gains_L_phase", "antenna_mask")
+
+        gains_dict = {v[0]:v[1:] for v in zip(*(synth_task['gains'][x] for x in sorting_keys))}
+        gains_list_sorted = [gains_dict[ant] for ant in antenna_order]
+
+        for i, k in enumerate(sorting_keys[1:]):
+            synth_task['gains'].update({k: [x[i] for x in gains_list_sorted]})
+
         srh_obj.loadGains(synth_task['gains'])
         calibrate = False
     srh_obj.makeImage(path = synth_task['params']['outdir'],
