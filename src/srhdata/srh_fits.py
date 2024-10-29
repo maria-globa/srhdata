@@ -12,6 +12,8 @@ from .ZirinTb import ZirinTb
 import json
 from .srh_coordinates import RAOcoords
 from casatasks import importuvfits
+import os
+import h5py
 
 
 class SrhFitsFile():
@@ -297,7 +299,7 @@ class SrhFitsFile():
             json.dump(currentGainsDict, saveGainFile)
             
     def loadGains(self, gains):
-        if type(gains) == 'string':
+        if type(gains) == str:
             self.loadGainsFromFile(gains)
         if type(gains) == dict:
             self.loadGainsFromDict(gains)
@@ -323,6 +325,12 @@ class SrhFitsFile():
             raise Exception('Attempted to load %s gains for %s array' % (gains['array'], self.hduList[0].header['INSTRUME']))
             
     def loadGainsFromFile(self, filename):
+        if os.path.splitext(filename)[1] == '.json':
+            self.loadGainsJson(filename)
+        if os.path.splitext(filename)[1] == '.hdf5':
+            self.loadGainsHdf5(filename)
+            
+    def loadGainsJson(self, filename):
         with open(filename,'r') as readGainFile:
             currentGains = json.load(readGainFile)
         self.ewAntPhaLcp = NP.array(currentGains['ewPhaseLcp'])
@@ -356,6 +364,28 @@ class SrhFitsFile():
         except:
             pass
         self.lm_hd_relation = NP.array(currentGains['lm_hd_relation'])
+        
+    def loadGainsHdf5(self, filename):
+        rf = h5py.File(filename, 'r')
+        date_cal = list(rf.keys())[0]
+        freqs = NP.zeros(NP.shape(rf[date_cal]["Frequency channels"]))
+        freqs = rf[date_cal]["Frequency channels"][:]
+        if len(freqs) == 16:
+            self.calibration_fun_sum_lcp = rf[date_cal]["calibration_fun_sum_lcp"][:]
+            self.calibration_fun_sum_rcp = rf[date_cal]["calibration_fun_sum_rcp"][:]
+            self.nsAntAmpLcp, self.ewAntAmpLcp = rf[date_cal]["Amp LCP"][:, :self.antNumberNS], rf[date_cal]["Amp LCP"][:, self.antNumberNS:]
+            self.nsAntAmpRcp, self.ewAntAmpRcp = rf[date_cal]["Amp RCP"][:, :self.antNumberNS], rf[date_cal]["Amp RCP"][:, self.antNumberNS:]
+            self.nsAntPhaLcp, self.ewAntPhaLcp = rf[date_cal]["Phase LCP"][:, :self.antNumberNS], rf[date_cal]["Phase LCP"][:, self.antNumberNS:]
+            self.nsAntPhaRcp, self.ewAntPhaRcp = rf[date_cal]["Phase RCP"][:, :self.antNumberNS], rf[date_cal]["Phase RCP"][:, self.antNumberNS:]
+        else:
+            freq_ind = NP.where(self.freqList == freqs)[0]
+            self.calibration_fun_sum_lcp[freq_ind] = rf[date_cal]["calibration_fun_sum_lcp"][:]
+            self.calibration_fun_sum_rcp[freq_ind] = rf[date_cal]["calibration_fun_sum_rcp"][:]
+            self.nsAntAmpLcp[freq_ind], self.ewAntAmpLcp[freq_ind] = rf[date_cal]["Amp LCP"][:self.antNumberNS], rf[date_cal]["Amp LCP"][self.antNumberNS:]
+            self.nsAntAmpRcp[freq_ind], self.ewAntAmpRcp[freq_ind] = rf[date_cal]["Amp RCP"][:self.antNumberNS], rf[date_cal]["Amp RCP"][self.antNumberNS:]
+            self.nsAntPhaLcp[freq_ind], self.ewAntPhaLcp[freq_ind] = rf[date_cal]["Phase LCP"][:self.antNumberNS], rf[date_cal]["Phase LCP"][self.antNumberNS:]
+            self.nsAntPhaRcp[freq_ind], self.ewAntPhaRcp[freq_ind] = rf[date_cal]["Phase RCP"][:self.antNumberNS], rf[date_cal]["Phase RCP"][self.antNumberNS:]
+        rf.close()
         
     def getGains(self, frequency):
         ant_mask = NP.ones(len(self.antennaNames), dtype = int)
