@@ -23,6 +23,7 @@ from pathlib import Path
 from sunpy.map.header_helper import make_heliographic_header
 from sunpy.coordinates import get_earth
 from scipy.interpolate import RegularGridInterpolator
+from threadpoolctl import threadpool_limits
 
 class SrhFitsFile0612(SrhFitsFile):
     def __init__(self, name):
@@ -321,7 +322,8 @@ class SrhFitsFile0612(SrhFitsFile):
                 ewSolVisNumber, nsNum, ewNum, solVisArrayNS, antAGainsNS, antBGainsNS, solVisArrayEW, 
                 antAGainsEW, antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains, nsAmpSign)
 
-        ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_lcp[freqChannel], args = args, max_nfev = 400)
+        with threadpool_limits(limits=self.n_threads, user_api='blas'):
+            ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_lcp[freqChannel], args = args, max_nfev = 400)
         self.calibrationResultLcp[freqChannel] = ls_res['x']
         self.x_ini_lcp[freqChannel] = ls_res['x']
         gains = srh_utils.real_to_complex(ls_res['x'][1:-1])[(baselinesNumber-1)*2:]
@@ -402,7 +404,8 @@ class SrhFitsFile0612(SrhFitsFile):
                 ewSolVisNumber, nsNum, ewNum, solVisArrayNS, antAGainsNS, antBGainsNS, solVisArrayEW, 
                 antAGainsEW, antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains, nsAmpSign)
 
-        ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_lcp[freqChannel], args = args, max_nfev = 400)
+        with threadpool_limits(limits=self.n_threads, user_api='blas'):
+            ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_lcp[freqChannel], args = args, max_nfev = 400)
         self.calibrationResultRcp[freqChannel] = ls_res['x']
         self.x_ini_rcp[freqChannel] = ls_res['x']
         gains = srh_utils.real_to_complex(ls_res['x'][1:-1])[(baselinesNumber-1)*2:]
@@ -663,12 +666,13 @@ class SrhFitsFile0612(SrhFitsFile):
         if self.flux_calibrated:
             Tb = self.ZirinQSunTb.getTbAtFrequency(self.freqList[self.frequencyChannel]*1e-6) * 1e3
             x_ini = [0,0,0]
-            ls_res = least_squares(self.diskDiff_stair_fluxNorm, x_ini, args = (0,Tb/self.convolutionNormCoef), ftol=self.centering_ftol)
-            # self.centeringResultLcp[self.frequencyChannel] = ls_res['x']
-            _ewSlopeLcp, _nsSlopeLcp, _nsLcpStair = ls_res['x']
-            ls_res = least_squares(self.diskDiff_stair_fluxNorm, x_ini, args = (1,Tb/self.convolutionNormCoef), ftol=self.centering_ftol)
-            _ewSlopeRcp, _nsSlopeRcp, _nsRcpStair = ls_res['x']
-            # self.centeringResultRcp[self.frequencyChannel] = ls_res['x']
+            with threadpool_limits(limits=self.n_threads, user_api='blas'):
+                ls_res = least_squares(self.diskDiff_stair_fluxNorm, x_ini, args = (0,Tb/self.convolutionNormCoef), ftol=self.centering_ftol)
+                # self.centeringResultLcp[self.frequencyChannel] = ls_res['x']
+                _ewSlopeLcp, _nsSlopeLcp, _nsLcpStair = ls_res['x']
+                ls_res = least_squares(self.diskDiff_stair_fluxNorm, x_ini, args = (1,Tb/self.convolutionNormCoef), ftol=self.centering_ftol)
+                _ewSlopeRcp, _nsSlopeRcp, _nsRcpStair = ls_res['x']
+                # self.centeringResultRcp[self.frequencyChannel] = ls_res['x']
             
             self.diskLevelLcp[self.frequencyChannel] = Tb/self.convolutionNormCoef
             self.diskLevelRcp[self.frequencyChannel] = Tb/self.convolutionNormCoef
@@ -677,12 +681,13 @@ class SrhFitsFile0612(SrhFitsFile):
             Tb = self.ZirinQSunTb.getTbAtFrequency(self.freqList[self.frequencyChannel]*1e-6) * 1e3
             x_ini = [Tb/self.convolutionNormCoef,0,0,0]
             
-            ls_res = least_squares(self.diskDiff_stair, x_ini, args = (0,), ftol=self.centering_ftol)
-            # self.centeringResultLcp[self.frequencyChannel] = ls_res['x']
-            _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _nsLcpStair = ls_res['x']
-            ls_res = least_squares(self.diskDiff_stair, x_ini, args = (1,), ftol=self.centering_ftol)
-            _diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _nsRcpStair = ls_res['x']
-            # self.centeringResultRcp[self.frequencyChannel] = ls_res['x']
+            with threadpool_limits(limits=self.n_threads, user_api='blas'):
+                ls_res = least_squares(self.diskDiff_stair, x_ini, args = (0,), ftol=self.centering_ftol)
+                # self.centeringResultLcp[self.frequencyChannel] = ls_res['x']
+                _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _nsLcpStair = ls_res['x']
+                ls_res = least_squares(self.diskDiff_stair, x_ini, args = (1,), ftol=self.centering_ftol)
+                _diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _nsRcpStair = ls_res['x']
+                # self.centeringResultRcp[self.frequencyChannel] = ls_res['x']
             
             if _diskLevelLcp<0:
                 _nsLcpStair += 180

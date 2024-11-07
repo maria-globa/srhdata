@@ -41,6 +41,7 @@ class SrhFitsFile():
         self.useRLDif = False
         self.flux_calibrated = False
         self.corr_amp_exist = False
+        self.n_threads = 1
         
         # self.open(name)
                    

@@ -25,6 +25,7 @@ from pathlib import Path
 from sunpy.map.header_helper import make_heliographic_header
 from sunpy.coordinates import get_earth
 from scipy.interpolate import RegularGridInterpolator
+from threadpoolctl import threadpool_limits
 
 class SrhFitsFile1224(SrhFitsFile):
     def __init__(self, name):
@@ -211,7 +212,8 @@ class SrhFitsFile1224(SrhFitsFile):
                 solVisArrayNS, antAGainsNS, antBGainsNS, solVisArrayEW, antAGainsEW, 
                 antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains, nsAmpSign)
 
-        ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_lcp[freqChannel], args = args, max_nfev = 400)
+        with threadpool_limits(limits=self.n_threads, user_api='blas'):
+            ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_lcp[freqChannel], args = args, max_nfev = 400)
         self.calibrationResultLcp[freqChannel] = ls_res['x']
         gains = srh_utils.real_to_complex(ls_res['x'][1:])[(self.baselines-1)*2:]
         self.ew_gains_lcp = gains[:self.antNumberEW]
@@ -284,7 +286,8 @@ class SrhFitsFile1224(SrhFitsFile):
                 solVisArrayNS, antAGainsNS, antBGainsNS, solVisArrayEW, antAGainsEW, 
                 antBGainsEW, ewSolVis, nsSolVis, solVis, antAGains, antBGains, nsAmpSign)
         
-        ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_rcp[freqChannel], args = args, max_nfev = 400)
+        with threadpool_limits(limits=self.n_threads, user_api='blas'):
+            ls_res = least_squares(self.allGainsFunc_constrained, self.x_ini_rcp[freqChannel], args = args, max_nfev = 400)
         self.calibrationResultRcp[freqChannel] = ls_res['x']
         gains = srh_utils.real_to_complex(ls_res['x'][1:])[(self.baselines-1)*2:]
         self.ew_gains_rcp = gains[:self.antNumberEW]
@@ -649,10 +652,11 @@ class SrhFitsFile1224(SrhFitsFile):
         self.createUvUniform()
         self.x_ini = [Tb/self.convolutionNormCoef,0,0,1]
         # x_ini = [1,0,0]
-        self.center_ls_res_lcp = least_squares(self.diskDiff, self.x_ini, args = (0,))
-        _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _shiftLcp = self.center_ls_res_lcp['x']
-        self.center_ls_res_rcp = least_squares(self.diskDiff, self.x_ini, args = (1,))
-        _diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _shiftRcp = self.center_ls_res_rcp['x']
+        with threadpool_limits(limits=self.n_threads, user_api='blas'):
+            self.center_ls_res_lcp = least_squares(self.diskDiff, self.x_ini, args = (0,))
+            _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _shiftLcp = self.center_ls_res_lcp['x']
+            self.center_ls_res_rcp = least_squares(self.diskDiff, self.x_ini, args = (1,))
+            _diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _shiftRcp = self.center_ls_res_rcp['x']
         
         print(_diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _shiftLcp)
         print(_diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _shiftRcp)
@@ -681,35 +685,36 @@ class SrhFitsFile1224(SrhFitsFile):
         fun_lcp = 10
         fun_rcp = 10
   
-        for i in range(3):
-            for j in range(3):
-                self.x_ini = [Tb/self.convolutionNormCoef, -90+i*90, -90+j*90, 1]
-                ls_res = least_squares(self.diskDiff, self.x_ini, args = (0,), ftol=1e-3)
-                if i==0 and j==0:
-                    _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _shiftLcp = ls_res['x']
-                    fun_lcp = NP.sum(ls_res['fun']**2)
-                    _diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _shiftRcp = ls_res['x']
-                    fun_rcp = NP.sum(ls_res['fun']**2)
-                    
-                else:
-                    if NP.sum(ls_res['fun']**2)<fun_lcp and ls_res['x'][0]>0:
+        with threadpool_limits(limits=self.n_threads, user_api='blas'):
+            for i in range(3):
+                for j in range(3):
+                    self.x_ini = [Tb/self.convolutionNormCoef, -90+i*90, -90+j*90, 1]
+                    ls_res = least_squares(self.diskDiff, self.x_ini, args = (0,), ftol=1e-3)
+                    if i==0 and j==0:
                         _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _shiftLcp = ls_res['x']
                         fun_lcp = NP.sum(ls_res['fun']**2)
-
-                    self.x_ini = [Tb/self.convolutionNormCoef, -90+i*90, -90+j*90, 1]
-                    ls_res = least_squares(self.diskDiff, self.x_ini, args = (1,), ftol=1e-3)
-                    if NP.sum(ls_res['fun']**2)<fun_rcp and ls_res['x'][0]>0:
                         _diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _shiftRcp = ls_res['x']
                         fun_rcp = NP.sum(ls_res['fun']**2)
-
-        self.x_ini = [_diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _shiftLcp]               
-        ls_res = least_squares(self.diskDiff, self.x_ini, args = (0,), ftol=1e-10)
-        _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _shiftLcp = ls_res['x']
-        
-        self.x_ini = [_diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _shiftRcp]               
-        ls_res = least_squares(self.diskDiff, self.x_ini, args = (1,), ftol=1e-10)
-        _diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _shiftRcp = ls_res['x']
-        
+                        
+                    else:
+                        if NP.sum(ls_res['fun']**2)<fun_lcp and ls_res['x'][0]>0:
+                            _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _shiftLcp = ls_res['x']
+                            fun_lcp = NP.sum(ls_res['fun']**2)
+    
+                        self.x_ini = [Tb/self.convolutionNormCoef, -90+i*90, -90+j*90, 1]
+                        ls_res = least_squares(self.diskDiff, self.x_ini, args = (1,), ftol=1e-3)
+                        if NP.sum(ls_res['fun']**2)<fun_rcp and ls_res['x'][0]>0:
+                            _diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _shiftRcp = ls_res['x']
+                            fun_rcp = NP.sum(ls_res['fun']**2)
+    
+            self.x_ini = [_diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _shiftLcp]               
+            ls_res = least_squares(self.diskDiff, self.x_ini, args = (0,), ftol=1e-10)
+            _diskLevelLcp, _ewSlopeLcp, _nsSlopeLcp, _shiftLcp = ls_res['x']
+            
+            self.x_ini = [_diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _shiftRcp]               
+            ls_res = least_squares(self.diskDiff, self.x_ini, args = (1,), ftol=1e-10)
+            _diskLevelRcp, _ewSlopeRcp, _nsSlopeRcp, _shiftRcp = ls_res['x']
+            
         self.diskLevelLcp[self.frequencyChannel] = _diskLevelLcp
         self.diskLevelRcp[self.frequencyChannel] = _diskLevelRcp
  
