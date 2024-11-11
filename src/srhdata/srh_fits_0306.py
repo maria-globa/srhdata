@@ -39,8 +39,8 @@ class SrhFitsFile0306(SrhFitsFile):
         self.antZeroRow = self.hduList[3].data['ant_zero_row'][:97]
         self.lcpShift = NP.ones(self.freqListLength) # 0-frequency component in the spectrum
         self.rcpShift = NP.ones(self.freqListLength)
-        self.fluxLcp = NP.zeros(self.freqListLength)
-        self.fluxRcp = NP.zeros(self.freqListLength)
+        self.fluxLcp = NP.zeros((self.freqListLength, self.dataLength))
+        self.fluxRcp = NP.zeros((self.freqListLength, self.dataLength))
         self.convolutionNormCoef = 44.8
         self.out_filenames = []
         if self.corr_amp_exist:
@@ -83,30 +83,30 @@ class SrhFitsFile0306(SrhFitsFile):
         ampFluxLcp = NP.mean(self.ampLcp, axis = 2)
 
             
-        self.tempRcp = NP.zeros(self.freqListLength)
-        self.tempLcp = NP.zeros(self.freqListLength)
+        self.tempRcp = NP.zeros((self.freqListLength, self.dataLength))
+        self.tempLcp = NP.zeros((self.freqListLength, self.dataLength))
         
         self.beam()
-        for ff in range(self.freqListLength):
-            ampFluxRcp[ff,:] -= fluxZerosRcp[ff]
-            ampFluxRcp[ff,:] *= fluxNormRcp[ff]
-            ampFluxLcp[ff,:] -= fluxZerosLcp[ff]
-            ampFluxLcp[ff,:] *= fluxNormLcp[ff]
-            
-            self.fluxLcp[ff] = NP.mean(ampFluxLcp[ff])
-            self.fluxRcp[ff] = NP.mean(ampFluxRcp[ff])
-            
-            lam = scipy.constants.c/(self.freqList[ff]*1e3)
-            
-            self.tempLcp[ff] = NP.mean(ampFluxLcp[ff]) * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[ff])
-            self.tempRcp[ff] = NP.mean(ampFluxRcp[ff]) * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[ff])
-            
-            self.visLcp[ff,:,:] *= NP.mean(self.tempLcp[ff])
-            self.visRcp[ff,:,:] *= NP.mean(self.tempRcp[ff])
-            
-            self.visLcp[ff,:,:] *= 2 # flux is divided by 2 for R and L
-            self.visRcp[ff,:,:] *= 2
-            
+        
+        ampFluxRcp -= fluxZerosRcp[:, None]
+        ampFluxRcp *= fluxNormRcp[:, None] 
+        ampFluxLcp -= fluxZerosLcp[:, None]
+        ampFluxLcp *= fluxNormLcp[:, None] 
+
+        self.fluxLcp = ampFluxLcp
+        self.fluxRcp = ampFluxRcp
+        
+        lam = scipy.constants.c/(self.freqList*1e3)
+        
+        self.tempLcp = ampFluxLcp * lam[:, None]**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[:, None])
+        self.tempRcp = ampFluxRcp * lam[:, None]**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[:, None])
+        
+        self.visLcp *= self.tempLcp[:, :, None]
+        self.visRcp *= self.tempRcp[:, :, None]
+        
+        self.visLcp *= 2 # flux is divided by 2 for R and L
+        self.visRcp *= 2
+
         self.flux_calibrated = True
             
     def beam(self):
@@ -459,8 +459,12 @@ class SrhFitsFile0306(SrhFitsFile):
                         # self.uvLcp[O, O + (32-i)*2] = NP.conj(self.uvLcp[O, O + (i-32)*2])
                         # self.uvRcp[O, O + (32-i)*2] = NP.conj(self.uvRcp[O, O + (i-32)*2])
         if (amplitudeCorrect):
-            self.uvLcp[O,O] = self.lcpShift[self.frequencyChannel]
-            self.uvRcp[O,O] = self.rcpShift[self.frequencyChannel]
+            if average:
+                self.uvLcp[O,O] = NP.mean(self.fluxLcp[self.frequencyChannel, firstScan:lastScan])*2
+                self.uvRcp[O,O] = NP.mean(self.fluxRcp[self.frequencyChannel, firstScan:lastScan])*2
+            else:
+                self.uvLcp[O,O] = self.fluxLcp[self.frequencyChannel, scan]*2
+                self.uvRcp[O,O] = self.fluxRcp[self.frequencyChannel, scan]*2
         
         if PSF:
             self.uvLcp[NP.abs(self.uvLcp)>1e-8] = 1
@@ -759,8 +763,8 @@ class SrhFitsFile0306(SrhFitsFile):
         lcp = warp(lcp,(shift + (rotate + back_shift)).inverse)
         
         if not clean_disk:
-            rcp[rcp!=0] += self.tempRcp[self.frequencyChannel]*2 /NP.count_nonzero(self.uvRcp)
-            lcp[lcp!=0] += self.tempLcp[self.frequencyChannel]*2 /NP.count_nonzero(self.uvLcp)
+            rcp[rcp!=0] += self.tempRcp[self.frequencyChannel, scan]*2 /NP.count_nonzero(self.uvRcp)
+            lcp[lcp!=0] += self.tempLcp[self.frequencyChannel, scan]*2 /NP.count_nonzero(self.uvLcp)
    
         if imsize != naxis:
             x, y = NP.linspace(0,imsize-1,imsize), NP.linspace(0,imsize-1,imsize)

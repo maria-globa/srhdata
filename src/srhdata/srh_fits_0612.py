@@ -37,8 +37,8 @@ class SrhFitsFile0612(SrhFitsFile):
         self.convolutionNormCoef = 18.7
         self.out_filenames = []
         super().open()
-        self.fluxLcp = NP.zeros(self.freqListLength)
-        self.fluxRcp = NP.zeros(self.freqListLength)
+        self.fluxLcp = NP.zeros((self.freqListLength, self.dataLength))
+        self.fluxRcp = NP.zeros((self.freqListLength, self.dataLength))
         if self.corr_amp_exist:
             self.normalizeFlux()
         x_size = (self.baselines-1)*2 + self.antNumberEW + self.antNumberNS
@@ -72,29 +72,29 @@ class SrhFitsFile0612(SrhFitsFile):
         ampFluxRcp = NP.mean(self.ampRcp, axis = 2)
         ampFluxLcp = NP.mean(self.ampLcp, axis = 2)
             
-        self.tempRcp = NP.zeros(self.freqListLength)
-        self.tempLcp = NP.zeros(self.freqListLength)
+        self.tempRcp = NP.zeros((self.freqListLength, self.dataLength))
+        self.tempLcp = NP.zeros((self.freqListLength, self.dataLength))
         
         self.beam()
-        for ff in range(self.freqListLength):
-            ampFluxRcp[ff,:] -= fluxZerosRcp[ff]
-            ampFluxRcp[ff,:] *= fluxNormRcp[ff]
-            ampFluxLcp[ff,:] -= fluxZerosLcp[ff]
-            ampFluxLcp[ff,:] *= fluxNormLcp[ff]
-            
-            self.fluxLcp[ff] = NP.mean(ampFluxLcp[ff])
-            self.fluxRcp[ff] = NP.mean(ampFluxRcp[ff])
-            
-            lam = scipy.constants.c/(self.freqList[ff]*1e3)
-            
-            self.tempLcp[ff] = NP.mean(ampFluxLcp[ff]) * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[ff])
-            self.tempRcp[ff] = NP.mean(ampFluxRcp[ff]) * lam**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[ff])
+        
+        ampFluxRcp -= fluxZerosRcp[:, None]
+        ampFluxRcp *= fluxNormRcp[:, None] 
+        ampFluxLcp -= fluxZerosLcp[:, None]
+        ampFluxLcp *= fluxNormLcp[:, None] 
 
-            self.visLcp[ff,:,:] *= NP.mean(self.tempLcp[ff])
-            self.visRcp[ff,:,:] *= NP.mean(self.tempRcp[ff])
-            
-            self.visLcp[ff,:,:] *= 2 # flux is divided by 2 for R and L
-            self.visRcp[ff,:,:] *= 2
+        self.fluxLcp = ampFluxLcp
+        self.fluxRcp = ampFluxRcp
+        
+        lam = scipy.constants.c/(self.freqList*1e3)
+        
+        self.tempLcp = ampFluxLcp * lam[:, None]**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[:, None])
+        self.tempRcp = ampFluxRcp * lam[:, None]**2 * 1e-22 / (2*scipy.constants.k * self.beam_sr[:, None])
+        
+        self.visLcp *= self.tempLcp[:, :, None]
+        self.visRcp *= self.tempRcp[:, :, None]
+        
+        self.visLcp *= 2 # flux is divided by 2 for R and L
+        self.visRcp *= 2
         
         self.flux_calibrated = True
             
