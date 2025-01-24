@@ -950,8 +950,8 @@ class SrhFitsFile0612(SrhFitsFile):
         imagename = 'srh_%sT%s_%04d'%(self.hduList[0].header['DATE-OBS'].replace('-',''), fitsTime.replace(':',''), self.freqList[frequency]*1e-3 + .5)
         absname = os.path.join(path, imagename)
         casa_imagename = os.path.join(path, imagename)
+        self.setFrequencyChannel(frequency)
         if calibtable!='':
-            self.setFrequencyChannel(frequency)
             self.loadGains(calibtable)
         elif calibrate:
             self.calibrate(frequency)

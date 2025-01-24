@@ -893,8 +893,8 @@ class SrhFitsFile0306(SrhFitsFile):
         
         absname = os.path.join(path, imagename)
         casa_imagename = os.path.join(path, imagename)
+        self.setFrequencyChannel(frequency)
         if calibtable!='':
-            self.setFrequencyChannel(frequency)
             self.loadGains(calibtable)
         elif calibrate:
             self.calibrate(frequency)
