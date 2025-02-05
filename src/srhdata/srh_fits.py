@@ -322,6 +322,10 @@ class SrhFitsFile():
             self.ewAntPhaLcp[frequency] = NP.array(gains['gains_L_phase'][self.antNumberNS:])
             self.calibration_fun_sum_rcp[frequency] = gains['residual_R']
             self.calibration_fun_sum_lcp[frequency] = gains['residual_L']
+            try:
+                self.lm_hd_relation[frequency] = gains['additional']['lm_hd_relation']
+            except:
+                pass
         else:
             raise Exception('Attempted to load %s gains for %s array' % (gains['array'], self.hduList[0].header['INSTRUME']))
             
@@ -401,11 +405,11 @@ class SrhFitsFile():
             gains_dict['antennas'][63] = 'C30'
         gains_dict['gains_R_amplitude'] = NP.append(self.nsAntAmpRcp[frequency], self.ewAntAmpRcp[frequency]).tolist()
         gains_dict['gains_L_amplitude'] = NP.append(self.nsAntAmpLcp[frequency], self.ewAntAmpLcp[frequency]).tolist()
-        gains_dict['gains_R_phase'] = NP.append(self.nsAntPhaRcp[frequency], self.ewAntPhaRcp[frequency]).tolist()
-        gains_dict['gains_L_phase'] = NP.append(self.nsAntPhaLcp[frequency], self.ewAntPhaLcp[frequency]).tolist()
+        gains_dict['gains_R_phase'] = NP.append(self.nsAntPhaRcp[frequency] + self.nsRcpPhaseCorrection[frequency], self.ewAntPhaRcp[frequency] + self.ewRcpPhaseCorrection[frequency]).tolist()
+        gains_dict['gains_L_phase'] = NP.append(self.nsAntPhaLcp[frequency] + self.nsLcpPhaseCorrection[frequency], self.ewAntPhaLcp[frequency] + self.ewLcpPhaseCorrection[frequency]).tolist()
         gains_dict['residual_R'] = float(self.calibration_fun_sum_rcp[frequency])
         gains_dict['residual_L'] = float(self.calibration_fun_sum_lcp[frequency])
-        gains_dict['additional'] = {}
+        gains_dict['additional'] = {'lm_hd_relation' : self.lm_hd_relation[frequency]}
         gains_dict['antenna_mask'] = ant_mask.tolist()
         return gains_dict
         
