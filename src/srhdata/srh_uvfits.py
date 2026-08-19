@@ -6,7 +6,7 @@ Created on Sat Jan  1 11:44:53 2022
 @author: sergey_lesovoi
 """
 
-from pyuvdata import UVData
+from pyuvdata import UVData, Telescope, utils
 import numpy as NP
 from astropy.time import Time
 import astropy.coordinates as COORD
@@ -75,8 +75,7 @@ class SrhUVData(UVData):
         self.ant_2_array = srhFits.antennaB[vis_list]
         self.antenna_names = srhFits.antennaNames
         self.antenna_numbers = NP.array(list(map(int,srhFits.antennaNumbers)))
-        self.Nants_data = NP.union1d(srhFits.antennaA[vis_list],srhFits.antennaB[vis_list]).size
-        self.Nants_telescope = srhFits.antennaNames.shape[0]
+        self.Nants_data = srhFits.antennaNames.shape[0]
         self.Nfreqs = 1
         self.Npols = 2
         self.Ntimes = 1
@@ -100,17 +99,17 @@ class SrhUVData(UVData):
         phase_center_cat['cat_epoch'] = 2000.0
         self.phase_center_catalog = {}
         self.phase_center_catalog[0] = phase_center_cat
-        self.channel_width = 1e7
-        self.freq_array = NP.zeros((1,1))
+        self.channel_width = NP.array([1e7])
+        self.freq_array = NP.zeros((1,))
         self.freq_array[0] = srhFits.freqList[frequency]*1e3
         self.history = 'SRH'
         self.instrument = 'SRH0306'
         self.integration_time = NP.full(self.Nblts,0.1)
-        self.antenna_diameters = NP.full(self.Nants_telescope,3.)
+        self.antenna_diameters = NP.full(self.Nants_data,3.)
         self.lst_array = NP.full(self.Nblts,0.)
         self.object_name = 'Sun'
         self.polarization_array = NP.array([-1,-2])
-        self.spw_array = [1]
+        self.spw_array = NP.array([0])
         self.telescope_location = list(self.srhLocation)
         self.telescope_name = 'SRH'
         self.time_array = NP.full(self.Nblts,scanTime.jd)
@@ -118,10 +117,37 @@ class SrhUVData(UVData):
         self.data_array[:,0,0,0] = visRcp
         self.data_array[:,0,0,1] = visLcp
         self.data_array = self.data_array.astype('complex64')
+        self.flex_spw_id_array = NP.array([0])
         
         self.flag_array = NP.full((self.Nblts,1,self.Nfreqs,self.Npols),False,dtype='bool')
         self.nsample_array = NP.full((self.Nblts,1,self.Nfreqs,self.Npols),1,dtype='float')
         self.vis_units = 'uncalib'
+        
+        lat_lon_alt = [self.srhEarthLocation.lat.to_value(),
+                       self.srhEarthLocation.lon.to_value(),
+                       self.srhEarthLocation.height.to_value()]
+        
+        lat_rad, lon_rad = self.srhEarthLocation.lat.rad, self.srhEarthLocation.lon.rad
+        srh_center = utils.XYZ_from_LatLonAlt(lat_rad, lon_rad, lat_lon_alt[2])
+        
+        self.antenna_positions = NP.zeros((self.Nants_data,3))
+        for ant in NP.arange(0, 31):
+            self.antenna_positions[ant] =  NP.array([-(ant + 1) * 9.8, 0, 0]) + srh_center
+        for ant in NP.arange(31, 128):
+            self.antenna_positions[ant] = NP.array([0, (ant - 63) * 9.8, 0]) + srh_center
+        self.telescope = Telescope()
+        self.telescope.Nants = self.Nants_data
+        self.telescope.new('SRH', self.srhEarthLocation, antenna_names = srhFits.antennaNames, 
+                           # antenna_numbers = NP.array(list(map(int,srhFits.antennaNumbers))),
+                           antenna_numbers = srhFits.antennaNumbers,
+                           antenna_positions = self.antenna_positions,
+                           antenna_diameters = NP.full(self.Nants_data,3.), 
+                           instrument = 'SRH0306')
+        self.telescope.location_lat_lon_alt_degrees = lat_lon_alt
+        self.telescope.antenna_positions = self.antenna_positions
+        self.telescope.antenna_names = srhFits.antennaNames
+        self.telescope.antenna_numbers = srhFits.antennaNumbers
+        
 
         flags_ew_lcp = NP.where(srhFits.ewAntAmpLcp[frequency] == 1e6)[0]
         flags_ew_rcp = NP.where(srhFits.ewAntAmpRcp[frequency] == 1e6)[0]
@@ -141,11 +167,7 @@ class SrhUVData(UVData):
         self.flag_array[:,0,0,0] = flags_arr
         self.flag_array[:,0,0,1] = flags_arr
 
-        self.antenna_positions = NP.zeros((self.Nants_telescope,3))
-        for ant in NP.arange(0, 97):
-            self.antenna_positions[ant] = [0, (ant - 32) * 9.8, 0]
-        for ant in NP.arange(97, 128):
-            self.antenna_positions[ant] =  [-(ant - 96) * 9.8, 0, 0]
+        
         self.baseline_array = 2048 * (self.ant_2_array + 1) + self.ant_1_array + 1 + 2**16
 #        self.uvw_array = self.antenna_positions[self.ant_1_array] - self.antenna_positions[self.ant_2_array]
         self.uvw_array = NP.zeros((len(vis_list),3))
@@ -185,8 +207,7 @@ class SrhUVData(UVData):
         self.ant_2_array = srhFits.antennaB[0:lastVisibility] + 1
         self.antenna_names = srhFits.antennaNames
         self.antenna_numbers = NP.array(list(map(int,srhFits.antennaNumbers))) + 1
-        self.Nants_data = NP.union1d(srhFits.antennaA[0:lastVisibility],srhFits.antennaB[0:lastVisibility]).size
-        self.Nants_telescope = srhFits.antennaNames.shape[0]
+        self.Nants_data = srhFits.antennaNames.shape[0]
         self.Nfreqs = 1
         self.Npols = 2
         self.Ntimes = 1
@@ -210,17 +231,17 @@ class SrhUVData(UVData):
         phase_center_cat['cat_epoch'] = 2000.0
         self.phase_center_catalog = {}
         self.phase_center_catalog[0] = phase_center_cat
-        self.channel_width = 1e7
-        self.freq_array = NP.zeros((1,1))
+        self.channel_width = NP.array([1e7])
+        self.freq_array = NP.zeros((1,))
         self.freq_array[0] = srhFits.freqList[frequency]*1e3
         self.history = 'SRH'
         self.instrument = 'SRH'
         self.integration_time = NP.full(self.Nblts,0.1)
-        self.antenna_diameters = NP.full(self.Nants_telescope,2.)
+        self.antenna_diameters = NP.full(self.Nants_data,2.)
         self.lst_array = NP.full(self.Nblts,0.)
         self.object_name = 'Sun'
         self.polarization_array = NP.array([-1,-2])
-        self.spw_array = [1]
+        self.spw_array = NP.array([0])
         self.telescope_location = list(self.srhLocation)
         self.telescope_name = 'SRH'
         self.time_array = NP.full(self.Nblts,scanTime.jd)
@@ -231,6 +252,7 @@ class SrhUVData(UVData):
         self.flag_array = NP.full((self.Nblts,1,self.Nfreqs,self.Npols),False,dtype='bool')
         self.nsample_array = NP.full((self.Nblts,1,self.Nfreqs,self.Npols),1,dtype='float')
         self.vis_units = 'uncalib'
+        self.flex_spw_id_array = NP.array([0])
 
         flags_ew_lcp = NP.where(srhFits.ewAntAmpLcp[frequency] == 1e6)[0]
         flags_ew_rcp = NP.where(srhFits.ewAntAmpRcp[frequency] == 1e6)[0]
@@ -247,11 +269,33 @@ class SrhUVData(UVData):
         self.flag_array[:,0,0,0] = flags_arr
         self.flag_array[:,0,0,1] = flags_arr
 
-        self.antenna_positions = NP.zeros((self.Nants_telescope,3))
+        lat_lon_alt = [self.srhEarthLocation.lat.to_value(),
+                       self.srhEarthLocation.lon.to_value(),
+                       self.srhEarthLocation.height.to_value()]
+        
+        lat_rad, lon_rad = self.srhEarthLocation.lat.rad, self.srhEarthLocation.lon.rad
+        srh_center = utils.XYZ_from_LatLonAlt(lat_rad, lon_rad, lat_lon_alt[2])
+        
+        self.antenna_positions = NP.zeros((self.Nants_data,3))
         for ant in NP.arange(0, 128):
-            self.antenna_positions[ant] = [0, (ant - 63.5) * 4.9, 0]
+            self.antenna_positions[ant] = NP.array([0, (ant - 63.5) * 4.9, 0]) + srh_center
         for ant in NP.arange(128, 192):
-            self.antenna_positions[ant] =  [(ant - 127.5) * 4.9, 0, 0]
+            self.antenna_positions[ant] = NP.array([(ant - 127.5) * 4.9, 0, 0]) + srh_center
+        self.telescope = Telescope()
+        self.telescope.Nants = self.Nants_data
+        self.telescope.new('SRH', self.srhEarthLocation, antenna_names = srhFits.antennaNames, 
+                           # antenna_numbers = NP.array(list(map(int,srhFits.antennaNumbers))),
+                           antenna_numbers = srhFits.antennaNumbers,
+                           antenna_positions = self.antenna_positions,
+                           antenna_diameters = NP.full(self.Nants_data,3.), 
+                           instrument = 'SRH0612')
+        self.telescope.location_lat_lon_alt_degrees = lat_lon_alt
+        self.telescope.antenna_positions = self.antenna_positions
+        self.telescope.antenna_names = srhFits.antennaNames
+        self.telescope.antenna_numbers = srhFits.antennaNumbers + 1
+        
+        
+        
         self.baseline_array = 2048 * (self.ant_2_array) + self.ant_1_array + 2**16
         # self.uvw_array = self.antenna_positions[self.ant_1_array] - self.antenna_positions[self.ant_2_array]
         self.uvw_array = NP.zeros((lastVisibility,3))
@@ -305,8 +349,7 @@ class SrhUVData(UVData):
         self.ant_2_array = srhFits.antennaB[vis_list] + 1
         self.antenna_names = srhFits.antennaNames
         self.antenna_numbers = NP.array(list(map(int,srhFits.antennaNumbers))) + 1
-        self.Nants_data = NP.union1d(srhFits.antennaA[vis_list],srhFits.antennaB[vis_list]).size
-        self.Nants_telescope = srhFits.antennaNames.shape[0]
+        self.Nants_data = srhFits.antennaNames.shape[0]
         self.Nfreqs = 1
         self.Npols = 2
         self.Ntimes = 1
@@ -330,17 +373,17 @@ class SrhUVData(UVData):
         phase_center_cat['cat_epoch'] = 2000.0
         self.phase_center_catalog = {}
         self.phase_center_catalog[0] = phase_center_cat
-        self.channel_width = 1e7
-        self.freq_array = NP.zeros((1,1))
+        self.channel_width = NP.array([1e7])
+        self.freq_array = NP.zeros((1,))
         self.freq_array[0] = srhFits.freqList[frequency]*1e3
         self.history = 'SRH'
         self.instrument = 'SRH1224'
         self.integration_time = NP.full(self.Nblts,0.1)
-        self.antenna_diameters = NP.full(self.Nants_telescope,1.)
+        self.antenna_diameters = NP.full(self.Nants_data,1.)
         self.lst_array = NP.full(self.Nblts,0.)
         self.object_name = 'Sun'
         self.polarization_array = NP.array([-1,-2])
-        self.spw_array = [1]
+        self.spw_array = NP.array([0])
         self.telescope_location = list(self.srhLocation)
         self.telescope_name = 'SRH'
         self.time_array = NP.full(self.Nblts,scanTime.jd)
@@ -348,6 +391,7 @@ class SrhUVData(UVData):
         self.data_array[:,0,0,0] = visRcp
         self.data_array[:,0,0,1] = visLcp
         self.data_array = self.data_array.astype('complex64')
+        self.flex_spw_id_array = NP.array([0])
         
         self.flag_array = NP.full((self.Nblts,1,self.Nfreqs,self.Npols),False,dtype='bool')
         self.nsample_array = NP.full((self.Nblts,1,self.Nfreqs,self.Npols),1,dtype='float')
@@ -371,9 +415,31 @@ class SrhUVData(UVData):
         self.flag_array[:,0,0,0] = flags_arr
         self.flag_array[:,0,0,1] = flags_arr
 
-        self.antenna_positions = NP.zeros((self.Nants_telescope,3))
+        lat_lon_alt = [self.srhEarthLocation.lat.to_value(),
+                       self.srhEarthLocation.lon.to_value(),
+                       self.srhEarthLocation.height.to_value()]
+        
+        lat_rad, lon_rad = self.srhEarthLocation.lat.rad, self.srhEarthLocation.lon.rad
+        srh_center = utils.XYZ_from_LatLonAlt(lat_rad, lon_rad, lat_lon_alt[2])
+        
+        self.antenna_positions = NP.zeros((self.Nants_data,3))
         self.antenna_positions[:,0] = srhFits.antX/1e3
         self.antenna_positions[:,1] = srhFits.antY/1e3
+        for ant in NP.arange(0, self.Nants_data):
+            self.antenna_positions[ant] += srh_center
+        self.telescope = Telescope()
+        self.telescope.Nants = self.Nants_data
+        self.telescope.new('SRH', self.srhEarthLocation, antenna_names = srhFits.antennaNames, 
+                           # antenna_numbers = NP.array(list(map(int,srhFits.antennaNumbers))),
+                           antenna_numbers = srhFits.antennaNumbers,
+                           antenna_positions = self.antenna_positions,
+                           antenna_diameters = NP.full(self.Nants_data,3.), 
+                           instrument = 'SRH1224')
+        self.telescope.location_lat_lon_alt_degrees = lat_lon_alt
+        self.telescope.antenna_positions = self.antenna_positions
+        self.telescope.antenna_names = srhFits.antennaNames
+        self.telescope.antenna_numbers = srhFits.antennaNumbers + 1
+        
         self.baseline_array = 2048 * self.ant_2_array + self.ant_1_array + 2**16
 #        self.uvw_array = self.antenna_positions[self.ant_1_array] - self.antenna_positions[self.ant_2_array]
         self.uvw_array = NP.zeros((len(vis_list),3))
