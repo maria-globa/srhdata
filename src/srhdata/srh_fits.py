@@ -10,10 +10,13 @@ import numpy as NP
 from astropy.io import fits
 from .ZirinTb import ZirinTb
 import json
+# temporary
+import sqlite3
 from .srh_coordinates import RAOcoords
 from casatasks import importuvfits
 import os
 import h5py
+
 
 
 class SrhFitsFile():

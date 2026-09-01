@@ -147,6 +147,7 @@ class SrhUVData(UVData):
         self.telescope.antenna_positions = self.antenna_positions
         self.telescope.antenna_names = srhFits.antennaNames
         self.telescope.antenna_numbers = srhFits.antennaNumbers
+        self.telescope.antenna_diameters = NP.full(self.Nants_data,3.)
         
 
         flags_ew_lcp = NP.where(srhFits.ewAntAmpLcp[frequency] == 1e6)[0]
@@ -287,12 +288,13 @@ class SrhUVData(UVData):
                            # antenna_numbers = NP.array(list(map(int,srhFits.antennaNumbers))),
                            antenna_numbers = srhFits.antennaNumbers,
                            antenna_positions = self.antenna_positions,
-                           antenna_diameters = NP.full(self.Nants_data,3.), 
+                           antenna_diameters = NP.full(self.Nants_data,2.), 
                            instrument = 'SRH0612')
         self.telescope.location_lat_lon_alt_degrees = lat_lon_alt
         self.telescope.antenna_positions = self.antenna_positions
         self.telescope.antenna_names = srhFits.antennaNames
         self.telescope.antenna_numbers = srhFits.antennaNumbers + 1
+        self.telescope.antenna_diameters = NP.full(self.Nants_data,2.)
         
         
         
@@ -433,12 +435,13 @@ class SrhUVData(UVData):
                            # antenna_numbers = NP.array(list(map(int,srhFits.antennaNumbers))),
                            antenna_numbers = srhFits.antennaNumbers,
                            antenna_positions = self.antenna_positions,
-                           antenna_diameters = NP.full(self.Nants_data,3.), 
+                           antenna_diameters = NP.full(self.Nants_data,1.), 
                            instrument = 'SRH1224')
         self.telescope.location_lat_lon_alt_degrees = lat_lon_alt
         self.telescope.antenna_positions = self.antenna_positions
         self.telescope.antenna_names = srhFits.antennaNames
         self.telescope.antenna_numbers = srhFits.antennaNumbers + 1
+        self.telescope.antenna_diameters = NP.full(self.Nants_data,1.)
         
         self.baseline_array = 2048 * self.ant_2_array + self.ant_1_array + 2**16
 #        self.uvw_array = self.antenna_positions[self.ant_1_array] - self.antenna_positions[self.ant_2_array]
