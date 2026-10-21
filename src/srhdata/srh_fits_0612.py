@@ -719,7 +719,7 @@ class SrhFitsFile0612(SrhFitsFile):
         A = NP.vstack([workingAnts_ew, NP.ones(len(workingAnts_ew))]).T
         ew_slope, c = NP.linalg.lstsq(A, phaseDif_ew, rcond=None)[0]
         workingAnts_ns = NP.arange(0,64,1)
-        workingAnts_ns = NP.delete(workingAnts_ns, NP.append(self.flags_ns, NP.array((35,))))
+        workingAnts_ns = NP.delete(workingAnts_ns, NP.append(self.flags_ns, NP.array((35,37))))
         phaseDif_ns = NP.unwrap((self.nsAntPhaLcp[freq][workingAnts_ns]+self.nsLcpPhaseCorrection[freq][workingAnts_ns])
                              - (self.nsAntPhaRcp[freq][workingAnts_ns]+self.nsRcpPhaseCorrection[freq][workingAnts_ns]))
         A = NP.vstack([workingAnts_ns, NP.ones(len(workingAnts_ns))]).T
