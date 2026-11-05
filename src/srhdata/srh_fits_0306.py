@@ -120,10 +120,9 @@ class SrhFitsFile0306(SrhFitsFile):
         con = NP.zeros_like(contours)
         con[:,1] = contours[:,0]
         con[:,0] = contours[:,1]
-        sunEll = skimage.measure.EllipseModel()
-        sunEll.estimate(con)
-        major = NP.deg2rad(sunEll.params[2] * arcsecPerPix / 3600.)
-        minor = NP.deg2rad(sunEll.params[3] * arcsecPerPix / 3600.)
+        sunEll = skimage.measure.EllipseModel.from_estimate(con)
+        major = NP.deg2rad(sunEll.axis_lengths[0] * arcsecPerPix / 3600.)
+        minor = NP.deg2rad(sunEll.axis_lengths[1] * arcsecPerPix / 3600.)
         self.beam_sr[0] = NP.pi * major * minor / NP.log(2)
         for ff in range(1, self.freqListLength):
             self.beam_sr[ff] = self.beam_sr[0] * (self.freqList[0]/self.freqList[ff])**2
