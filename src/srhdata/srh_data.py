@@ -11,6 +11,9 @@ from .srh_fits_0612 import SrhFitsFile0612
 from .srh_fits_1224 import SrhFitsFile1224
 from astropy.io import fits
 
+from astropy.utils.iers import conf
+conf.auto_max_age = None
+
 def same_array(files):
     files = list(files)
     if len(files) > 1:
@@ -79,7 +82,7 @@ def execute_task(synth_task):
     srh_obj.makeImage(path = synth_task['params']['outdir'],
                       frequency = synth_task['task'][0]['frequency_index'],
                       average = srh_obj.dataLength,
-                      #compress_image = synth_task['params']['compressed'],
+                      compress = synth_task['params']['compressed'],
                       RL = out_pol,
                       clean_disk = synth_task['params']['clean_disk'],
                       cdelt = synth_task['params']['cdelt'],

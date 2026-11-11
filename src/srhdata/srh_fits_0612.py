@@ -806,7 +806,7 @@ class SrhFitsFile0612(SrhFitsFile):
         ia.unlock()
         ia.close()      
         
-    def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, naxis, scan, RL = False, save_model = False):
+    def casaImage2Fits(self, casa_imagename, fits_imagename, cell, imsize, naxis, scan, RL = False, save_model = False, compress = True):
         ia = IA()
         ia.open(casa_imagename + '.image')
         try:
@@ -881,32 +881,52 @@ class SrhFitsFile0612(SrhFitsFile):
         nsRcpPhaseColumn = fits.Column(name='nsRcpPhase',   format='D', array = self.nsAntPhaRcp[self.frequencyChannel,:] + self.nsRcpPhaseCorrection[self.frequencyChannel,:])
         saveFitsIExtHdu = fits.BinTableHDU.from_columns([ewLcpPhaseColumn, ewRcpPhaseColumn, nsLcpPhaseColumn, nsRcpPhaseColumn])
         if RL:
-            saveFitsRCPhdu = fits.PrimaryHDU(header=pHeader, data=rcp.astype('float32'))
-            saveFitsRCPpath = fits_imagename + '_RCP.fit'
-            hduList = fits.HDUList([saveFitsRCPhdu, saveFitsIExtHdu])
-            hduList.writeto(saveFitsRCPpath, overwrite=True)
-            
-            saveFitsLCPhdu = fits.PrimaryHDU(header=pHeader, data=lcp.astype('float32'))
-            saveFitsLCPpath = fits_imagename + '_LCP.fit'
-            hduList = fits.HDUList(saveFitsLCPhdu)
-            hduList.writeto(saveFitsLCPpath, overwrite=True)
-            
-            self.out_filenames.append(saveFitsRCPpath)
-            self.out_filenames.append(saveFitsLCPpath)
-            
+            if compress:
+                saveFitsRCPhdu = fits.CompImageHDU(header=pHeader, data=rcp.astype('float32'), compression_type='RICE_1')
+                saveFitsRCPpath = fits_imagename + '_RCP.fit'
+                primary = fits.PrimaryHDU()
+                hduList = fits.HDUList([primary, saveFitsRCPhdu, saveFitsIExtHdu])
+                hduList.writeto(saveFitsRCPpath, overwrite=True)
+                
+                saveFitsLCPhdu = fits.CompImageHDU(header=pHeader, data=lcp.astype('float32'), compression_type='RICE_1')
+                saveFitsLCPpath = fits_imagename + '_LCP.fit'
+                hduList = fits.HDUList([primary, saveFitsLCPhdu])
+                hduList.writeto(saveFitsLCPpath, overwrite=True)
+            else:
+                saveFitsRCPhdu = fits.PrimaryHDU(header=pHeader, data=rcp.astype('float32'))
+                saveFitsRCPpath = fits_imagename + '_RCP.fit'
+                hduList = fits.HDUList([saveFitsRCPhdu, saveFitsIExtHdu])
+                hduList.writeto(saveFitsRCPpath, overwrite=True)
+                
+                saveFitsLCPhdu = fits.PrimaryHDU(header=pHeader, data=lcp.astype('float32'))
+                saveFitsLCPpath = fits_imagename + '_LCP.fit'
+                hduList = fits.HDUList(saveFitsLCPhdu)
+                hduList.writeto(saveFitsLCPpath, overwrite=True)
         else:
             iImage = (rcp + lcp)/2
             vImage = (rcp - lcp)/2
-            saveFitsIhdu = fits.PrimaryHDU(header=pHeader, data=iImage.astype('float32'))
-            saveFitsIpath = fits_imagename + '_I.fit'
-            hduList = fits.HDUList([saveFitsIhdu, saveFitsIExtHdu])
-            hduList.writeto(saveFitsIpath, overwrite=True)
-            
-            saveFitsVhdu = fits.PrimaryHDU(header=pHeader, data=vImage.astype('float32'))
-            saveFitsVpath = fits_imagename + '_V.fit'
-            hduList = fits.HDUList(saveFitsVhdu)
-            hduList.writeto(saveFitsVpath, overwrite=True)
-            
+            if compress:
+                saveFitsIhdu = fits.CompImageHDU(header=pHeader, data=iImage.astype('float32'), compression_type='RICE_1')
+                saveFitsIpath = fits_imagename + '_I.fit'
+                primary = fits.PrimaryHDU()
+                hduList = fits.HDUList([primary, saveFitsIhdu, saveFitsIExtHdu])
+                hduList.writeto(saveFitsIpath, overwrite=True)
+                
+                saveFitsVhdu = fits.CompImageHDU(header=pHeader, data=vImage.astype('float32'), compression_type='RICE_1')
+                saveFitsVpath = fits_imagename + '_V.fit'
+                hduList = fits.HDUList([primary, saveFitsVhdu])
+                hduList.writeto(saveFitsVpath, overwrite=True)
+            else:
+                saveFitsIhdu = fits.PrimaryHDU(header=pHeader, data=iImage.astype('float32'))
+                saveFitsIpath = fits_imagename + '_I.fit'
+                hduList = fits.HDUList([saveFitsIhdu, saveFitsIExtHdu])
+                hduList.writeto(saveFitsIpath, overwrite=True)
+                
+                saveFitsVhdu = fits.PrimaryHDU(header=pHeader, data=vImage.astype('float32'))
+                saveFitsVpath = fits_imagename + '_V.fit'
+                hduList = fits.HDUList(saveFitsVhdu)
+                hduList.writeto(saveFitsVpath, overwrite=True)
+                
             self.out_filenames.append(saveFitsIpath)
             self.out_filenames.append(saveFitsVpath)
             
@@ -941,7 +961,7 @@ class SrhFitsFile0612(SrhFitsFile):
             self.out_filenames.append(saveFitsRCPpath)
             self.out_filenames.append(saveFitsLCPpath)
         
-    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, naxis = 512, cdelt = 4.9, RL = False, clean_disk = True, calibrate = True, use_mask = True, save_model = False, niter = 100000, threshold = 30000, stokes = 'RRLL', **kwargs):
+    def makeImage(self, path = './', calibtable = '', remove_tables = True, frequency = 0, scan = 0, average = 0, naxis = 512, cdelt = 4.9, RL = False, clean_disk = True, calibrate = True, use_mask = True, save_model = False, niter = 100000, threshold = 30000, stokes = 'RRLL', compress = True, **kwargs):
         cell = 2.45
         imsize = int(naxis * cdelt / cell)
         
@@ -967,7 +987,7 @@ class SrhFitsFile0612(SrhFitsFile):
             self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, startmodel = self.model_name, **kwargs)
         else:
             self.clean(imagename = casa_imagename, cell = cell, imsize = imsize, niter = niter, threshold = threshold, stokes = stokes, usemask = 'user', mask = self.mask_name, **kwargs)
-        self.casaImage2Fits(casa_imagename, absname, cell, imsize, naxis, scan, RL = RL, save_model = save_model)
+        self.casaImage2Fits(casa_imagename, absname, cell, imsize, naxis, scan, RL = RL, save_model = save_model, compress = compress)
         if remove_tables:
             rmtables(casa_imagename + '*')
             rmtables(absname + '.ms')
